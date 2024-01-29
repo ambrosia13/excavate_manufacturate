@@ -1,0 +1,24 @@
+[package]
+name = "excavate_manufacturate"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# Enable max optimizations for dependencies, but not for our code:
+[profile.dev.package."*"]
+opt-level = 3
+
+# Enable only a small amount of optimization in debug mode
+[profile.dev]
+opt-level = 1
+
+[dependencies]
+bevy = { version = "0.12.1", features = ["dynamic_linking"] }
+bevy_egui = "0.24.0"
+bevy_flycam = "0.12.0"
+crossbeam-queue = "0.3.11"
+futures-lite = "2.2.0"
+noisy_bevy = "0.5.0"
+rand = "0.8.5"
+rayon = "1.8.1"
