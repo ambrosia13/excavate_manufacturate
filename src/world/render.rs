@@ -9,12 +9,7 @@ use crate::{
     },
 };
 
-use super::{
-    block::{BlockData, BlockType},
-    chunk::{self, ChunkData},
-    render_distance::RenderDistance,
-    world_access::ExcavateManufacturateWorld,
-};
+use super::{render_distance::RenderDistance, world_access::ExcavateManufacturateWorld};
 
 /// The currently spawned chunks.
 #[derive(Resource, Deref, DerefMut)]

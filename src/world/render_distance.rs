@@ -32,7 +32,7 @@ impl RenderDistance {
 const INITIAL_RENDER_DISTANCE: usize = 8;
 
 pub fn setup_render_distance(mut commands: Commands) {
-    commands.insert_resource(RenderDistance(INITIAL_RENDER_DISTANCE));
+    commands.insert_resource(RenderDistance::new(INITIAL_RENDER_DISTANCE));
 
     info!(
         "Initialized render distance to {} chunks",

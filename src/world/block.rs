@@ -1,5 +1,3 @@
-use bevy::prelude::*;
-
 pub enum BlockData {
     Empty,
     Full(BlockType),
