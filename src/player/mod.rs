@@ -1,13 +1,22 @@
+use bevy::gizmos::prelude::*;
 use bevy::prelude::*;
 
 use crate::state::GameState;
+
+pub mod cursor;
+pub mod interact;
 
 pub struct ExavateManufacturatePlayerPlugin;
 
 impl Plugin for ExavateManufacturatePlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(GameState::InGame), setup_player)
-            .add_systems(OnExit(GameState::InGame), despawn_player);
+            .add_systems(OnExit(GameState::InGame), despawn_player)
+            .add_systems(
+                Update,
+                (interact::destroy_block, cursor::draw_crosshair)
+                    .run_if(in_state(GameState::InGame)),
+            );
     }
 }
 

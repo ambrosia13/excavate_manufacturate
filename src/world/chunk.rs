@@ -27,10 +27,12 @@ impl ChunkData {
     }
 
     pub fn block_pos_from_offset(offset: IVec3) -> BlockPos {
+        // (1, 1, 1) -> (0, 0, 0)
         BlockPos::from(offset - 1)
     }
 
     pub fn offset_from_block_pos(block_pos: BlockPos) -> IVec3 {
+        // (0, 0, 0) -> (1, 1, 1)
         block_pos.as_chunk_offset().inner() + 1
     }
 

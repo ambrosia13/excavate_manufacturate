@@ -1,8 +1,10 @@
+#[derive(Debug)]
 pub enum BlockData {
     Empty,
     Full(BlockType),
 }
 
+#[derive(Debug)]
 pub enum BlockType {
     Debug,
 }

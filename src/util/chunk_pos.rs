@@ -59,6 +59,12 @@ impl SubAssign for ChunkPos {
     }
 }
 
+impl std::fmt::Debug for ChunkPos {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("ChunkPos({}, {}, {})", self.x, self.y, self.z))
+    }
+}
+
 /// In relation to the player. (0, 0, 0) refers to the chunk that the player is currently in.
 #[derive(Deref, DerefMut, Clone, Copy)]
 pub struct LocalChunkPos(ChunkPos);

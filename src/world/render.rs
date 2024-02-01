@@ -1,4 +1,5 @@
 use bevy::{prelude::*, utils::HashMap};
+use bevy_rapier3d::prelude::*;
 use crossbeam_queue::SegQueue;
 
 use crate::{
@@ -79,6 +80,8 @@ pub fn spawn_chunks(
 
         let mesh = chunk.get_mesh();
 
+        // if let Some(indices) = mesh.indices() {
+        //     if !indices.is_empty() {
         let entity = commands
             .spawn((
                 MaterialMeshBundle {
@@ -87,7 +90,9 @@ pub fn spawn_chunks(
                         base_color: Color::RED,
                         ..Default::default()
                     }),
-                    transform: Transform::from_translation(BlockPos::from(chunk_pos).as_vec3()),
+                    transform: Transform::from_translation(
+                        BlockPos::from(chunk_pos).as_vec3() - 1.0,
+                    ),
                     ..Default::default()
                 },
                 chunk_pos,
@@ -97,6 +102,8 @@ pub fn spawn_chunks(
         if let Some(old_chunk) = spawned_chunks.insert(chunk_pos, entity) {
             commands.entity(old_chunk).despawn();
         }
+        //     }
+        // }
     }
 }
 

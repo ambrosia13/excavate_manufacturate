@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy_rapier3d::prelude::*;
 
 use crate::{player, state::GameState, world};
 
@@ -6,12 +7,15 @@ pub struct ExcavateManufacturateGamePlugin;
 
 impl Plugin for ExcavateManufacturateGamePlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(bevy_flycam::NoCameraPlayerPlugin)
-            .add_plugins((
-                player::ExavateManufacturatePlayerPlugin,
-                world::ExcavateManufacturateWorldPlugin,
-            ))
-            .add_systems(Update, exit_to_menu.run_if(in_state(GameState::InGame)));
+        app.add_plugins((
+            bevy_flycam::NoCameraPlayerPlugin,
+            RapierPhysicsPlugin::<NoUserData>::default(),
+        ))
+        .add_plugins((
+            player::ExavateManufacturatePlayerPlugin,
+            world::ExcavateManufacturateWorldPlugin,
+        ))
+        .add_systems(Update, exit_to_menu.run_if(in_state(GameState::InGame)));
     }
 }
 

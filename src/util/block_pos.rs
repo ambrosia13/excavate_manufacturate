@@ -72,3 +72,9 @@ impl SubAssign for BlockPos {
         self.0 -= rhs.0;
     }
 }
+
+impl std::fmt::Debug for BlockPos {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_fmt(format_args!("BlockPos({}, {}, {})", self.x, self.y, self.z))
+    }
+}

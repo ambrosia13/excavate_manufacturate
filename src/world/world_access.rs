@@ -10,6 +10,12 @@ pub struct ExcavateManufacturateWorld {
 }
 
 impl ExcavateManufacturateWorld {
+    pub fn new() -> Self {
+        Self {
+            chunks: HashMap::new(),
+        }
+    }
+
     pub fn get_chunk(&self, chunk_pos: ChunkPos) -> Option<&ChunkData> {
         self.chunks.get(&chunk_pos)
     }
@@ -32,8 +38,7 @@ impl ExcavateManufacturateWorld {
 
     pub fn get_block(&self, block_pos: BlockPos) -> Option<&BlockData> {
         if let Some(chunk_data) = self.get_chunk(ChunkPos::from(block_pos)) {
-            let chunk_offset = block_pos.as_chunk_offset();
-            Some(chunk_data.get(chunk_offset))
+            Some(chunk_data.get(block_pos))
         } else {
             None
         }
@@ -41,19 +46,27 @@ impl ExcavateManufacturateWorld {
 
     pub fn get_block_mut(&mut self, block_pos: BlockPos) -> Option<&mut BlockData> {
         if let Some(chunk_data) = self.get_chunk_mut(ChunkPos::from(block_pos)) {
-            let chunk_offset = block_pos.as_chunk_offset();
-            Some(chunk_data.get_mut(chunk_offset))
+            Some(chunk_data.get_mut(block_pos))
         } else {
             None
+        }
+    }
+
+    /// Attempts to set the block at the position. If the block's chunk does not exist, nothing happens and the function returns false.
+    pub fn set_block(&mut self, block_pos: BlockPos, block_data: BlockData) -> bool {
+        if let Some(chunk_data) = self.get_chunk_mut(ChunkPos::from(block_pos)) {
+            let chunk_offset = block_pos.as_chunk_offset();
+            chunk_data.set(chunk_offset, block_data);
+
+            true
+        } else {
+            false
         }
     }
 }
 
 pub fn setup_world_access(mut commands: Commands) {
-    commands.insert_resource(ExcavateManufacturateWorld {
-        chunks: HashMap::new(),
-    });
-
+    commands.insert_resource(ExcavateManufacturateWorld::new());
     info!("Initialized world");
 }
 
