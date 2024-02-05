@@ -3,16 +3,15 @@ use bevy_egui::{egui, EguiContexts, EguiPlugin};
 
 use crate::{state::GameState, world::render_distance::RenderDistance};
 
-pub struct ExcavateManufacturateMenuPlugin;
+pub struct ExcavateManufacturateMainMenuPlugin;
 
-impl Plugin for ExcavateManufacturateMenuPlugin {
+impl Plugin for ExcavateManufacturateMainMenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(EguiPlugin)
-            .add_systems(Update, menu_system.run_if(in_state(GameState::Menu)));
+        app.add_systems(Update, main_menu_system.run_if(in_state(GameState::Menu)));
     }
 }
 
-fn menu_system(
+fn main_menu_system(
     mut contexts: EguiContexts,
     mut next_state: ResMut<NextState<GameState>>,
     mut app_exit_events: EventWriter<AppExit>,

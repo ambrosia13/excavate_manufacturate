@@ -11,7 +11,8 @@ use crate::{
 };
 
 mod game;
-mod menu;
+mod game_menu;
+mod main_menu;
 mod player;
 mod state;
 mod util;
@@ -45,14 +46,16 @@ fn main() {
             }),
             ..Default::default()
         }))
+        .add_plugins(bevy_egui::EguiPlugin)
         .insert_resource(Msaa::Off)
         .add_plugins((
             bevy::diagnostic::FrameTimeDiagnosticsPlugin,
             bevy::diagnostic::LogDiagnosticsPlugin::default(),
         ))
         .add_plugins((
-            menu::ExcavateManufacturateMenuPlugin,
+            main_menu::ExcavateManufacturateMainMenuPlugin,
             game::ExcavateManufacturateGamePlugin,
+            game_menu::ExcavateManufacturateGameMenuPlugin,
         ))
         .run();
 }

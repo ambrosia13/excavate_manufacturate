@@ -80,8 +80,6 @@ pub fn spawn_chunks(
 
         let mesh = chunk.get_mesh();
 
-        // if let Some(indices) = mesh.indices() {
-        //     if !indices.is_empty() {
         let entity = commands
             .spawn((
                 MaterialMeshBundle {
@@ -102,8 +100,6 @@ pub fn spawn_chunks(
         if let Some(old_chunk) = spawned_chunks.insert(chunk_pos, entity) {
             commands.entity(old_chunk).despawn();
         }
-        //     }
-        // }
     }
 }
 

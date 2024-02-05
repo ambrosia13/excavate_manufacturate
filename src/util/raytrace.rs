@@ -68,3 +68,32 @@ where
 
     None
 }
+
+pub fn simple_stupid_raytrace<F>(
+    ray_pos: Vec3A,
+    ray_dir: Vec3A,
+    max_dist: f32,
+    num_steps: usize,
+    mut hit_evaluator: F,
+) -> Option<Hit>
+where
+    F: FnMut(IVec3) -> bool,
+{
+    let start_pos = ray_pos;
+    let end_pos = ray_pos + ray_dir * max_dist;
+
+    let ray_step = (end_pos - start_pos) / num_steps as f32;
+
+    for i in 0..num_steps {
+        let current_pos = start_pos + ray_step * i as f32;
+
+        if hit_evaluator(current_pos.as_ivec3()) {
+            return Some(Hit {
+                position: current_pos,
+                normal: Vec3A::Y,
+            });
+        }
+    }
+
+    None
+}
