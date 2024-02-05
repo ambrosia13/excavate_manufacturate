@@ -10,7 +10,10 @@ use crate::{
     },
 };
 
-use super::{render_distance::RenderDistance, world_access::ExcavateManufacturateWorld};
+use super::{
+    chunk::ChunkData, render_distance::RenderDistance, world_access::ExcavateManufacturateWorld,
+    CHUNK_SIZE_INT,
+};
 
 /// The currently spawned chunks.
 #[derive(Resource, Deref, DerefMut)]

@@ -37,9 +37,15 @@ impl WorldGenerator {
 
 pub fn setup_world_generator(mut commands: Commands) {
     let world_generator = WorldGenerator::new(|block_pos| {
-        let position = block_pos.as_vec3();
+        // let position = block_pos.as_vec3();
 
-        if position.y + 10.0 * noisy_bevy::simplex_noise_2d(position.xz() * 0.025) < 20.0 {
+        // if position.y + 10.0 * noisy_bevy::simplex_noise_2d(position.xz() * 0.025) < 20.0 {
+        //     BlockData::Full(BlockType::Debug)
+        // } else {
+        //     BlockData::Empty
+        // }
+
+        if block_pos.x % 3 == 0 && block_pos.y % 3 == 0 && block_pos.z % 3 == 0 {
             BlockData::Full(BlockType::Debug)
         } else {
             BlockData::Empty

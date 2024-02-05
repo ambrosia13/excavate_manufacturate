@@ -38,7 +38,7 @@ impl ExcavateManufacturateWorld {
 
     pub fn get_block(&self, block_pos: BlockPos) -> Option<&BlockData> {
         if let Some(chunk_data) = self.get_chunk(ChunkPos::from(block_pos)) {
-            Some(chunk_data.get(block_pos))
+            chunk_data.try_get_from_raw_offset(ChunkData::offset_from_block_pos(block_pos))
         } else {
             None
         }

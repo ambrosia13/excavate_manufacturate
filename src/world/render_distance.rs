@@ -29,7 +29,7 @@ impl RenderDistance {
     }
 }
 
-const INITIAL_RENDER_DISTANCE: usize = 8;
+const INITIAL_RENDER_DISTANCE: usize = 4;
 
 pub fn setup_render_distance(mut commands: Commands) {
     commands.insert_resource(RenderDistance::new(INITIAL_RENDER_DISTANCE));

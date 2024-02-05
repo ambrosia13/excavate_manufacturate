@@ -20,22 +20,33 @@ mod world;
 
 fn main() {
     // let world_generator = |block_pos: BlockPos| {
-    //     if block_pos.x % 2 == 0 {
+    //     if block_pos == BlockPos::new(21, 0, 1) {
     //         BlockData::Full(BlockType::Debug)
     //     } else {
     //         BlockData::Empty
     //     }
     // };
 
-    // let chunk_1 = ChunkData::with_data(world_generator);
-    // let chunk_2 = ChunkData::with_data(world_generator);
+    // let chunk_1 = ChunkData::with_data(|block_pos| {
+    //     world_generator(block_pos + BlockPos::from(ChunkPos::new(0, 0, 0)))
+    // });
+    // let chunk_2 = ChunkData::with_data(|block_pos| {
+    //     world_generator(block_pos + BlockPos::from(ChunkPos::new(1, 0, 0)))
+    // });
 
     // let mut world = ExcavateManufacturateWorld::new();
 
     // world.insert_chunk(ChunkPos::new(0, 0, 0), chunk_1);
     // world.insert_chunk(ChunkPos::new(1, 0, 0), chunk_2);
 
-    // println!("{:?}", world.get_block(BlockPos::new(31, 1, 2)));
+    // let chunk = world.get_chunk(ChunkPos::new(1, 0, 0)).unwrap();
+
+    // let block_pos = BlockPos::new(21, 0, 1);
+    // println!(
+    //     "world: {:?} vs chunk: {:?}",
+    //     world.get_block(block_pos),
+    //     chunk.get(block_pos)
+    // );
 
     App::new()
         .add_state::<GameState>()

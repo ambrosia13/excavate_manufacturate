@@ -26,6 +26,10 @@ impl ChunkData {
         }
     }
 
+    pub fn get_raw_array(&self) -> &[BlockData] {
+        &self.blocks
+    }
+
     pub fn block_pos_from_offset(offset: IVec3) -> BlockPos {
         // (1, 1, 1) -> (0, 0, 0)
         BlockPos::from(offset - 1)
@@ -91,6 +95,8 @@ impl ChunkData {
                     let offset = IVec3::new(x, y, z);
                     let index = Self::indexify(offset);
 
+                    let offset_without_padding = Self::block_pos_from_offset(offset).inner();
+
                     let block = &self.blocks[index];
 
                     // if block has no geometry, don't add faces for it
@@ -103,7 +109,12 @@ impl ChunkData {
 
                         if let Some(neighbor) = self.try_get_from_raw_offset(neighbor_pos) {
                             if !neighbor.is_opaque() {
-                                mesh_builder.add_face(face, normals, uvs, offset.as_vec3());
+                                mesh_builder.add_face(
+                                    face,
+                                    normals,
+                                    uvs,
+                                    offset_without_padding.as_vec3(),
+                                );
                             }
                         }
                     }

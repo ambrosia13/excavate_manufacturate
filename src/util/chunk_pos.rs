@@ -27,7 +27,7 @@ impl From<IVec3> for ChunkPos {
 
 impl From<BlockPos> for ChunkPos {
     fn from(value: BlockPos) -> Self {
-        Self(value.inner() / CHUNK_SIZE_INT)
+        Self(value.inner().div_euclid(IVec3::splat(CHUNK_SIZE_INT)))
     }
 }
 

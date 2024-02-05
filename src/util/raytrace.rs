@@ -25,7 +25,7 @@ where
     let step_dir = ray_dir.signum();
     let mut next_dist = (step_dir * 0.5 + 0.5 - ray_pos.fract()) / ray_dir;
 
-    let mut voxel_pos = ray_pos.floor().as_ivec3();
+    let mut voxel_pos = ray_pos.floor();
     let mut current_pos = ray_pos;
 
     for _ in 0..raytrace_length {
@@ -51,14 +51,14 @@ where
             },
         );
 
-        voxel_pos += (step_axis * step_dir).as_ivec3();
+        voxel_pos += step_axis * step_dir;
 
         next_dist -= closest_dist;
         next_dist += step_sizes * step_axis;
 
         hit.normal = step_axis;
 
-        if hit_evaluator(voxel_pos) {
+        if hit_evaluator(voxel_pos.floor().as_ivec3() + 1) {
             hit.position = current_pos;
             hit.normal *= -step_dir;
 
