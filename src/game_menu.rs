@@ -1,4 +1,4 @@
-use bevy::{app::AppExit, prelude::*};
+use bevy::prelude::*;
 use bevy_egui::{egui, EguiContexts};
 
 use crate::{
@@ -22,8 +22,9 @@ fn game_menu_system(
 ) {
     egui::Window::new("Game Menu").show(contexts.ctx_mut(), |ui| {
         ui.label(format!(
-            "Player position: {:?}",
+            "Player position: {:?}, {}",
             BlockPos::from(player_transform.single().translation),
+            player_transform.single().translation,
         ));
 
         let mut render_distance_chunks = render_distance.chunks();

@@ -38,7 +38,7 @@ impl ExcavateManufacturateWorld {
 
     pub fn get_block(&self, block_pos: BlockPos) -> Option<&BlockData> {
         if let Some(chunk_data) = self.get_chunk(ChunkPos::from(block_pos)) {
-            chunk_data.try_get_from_raw_offset(ChunkData::offset_from_block_pos(block_pos))
+            Some(chunk_data.get(block_pos))
         } else {
             None
         }
@@ -54,10 +54,8 @@ impl ExcavateManufacturateWorld {
 
     /// Attempts to set the block at the position. If the block's chunk does not exist, nothing happens and the function returns false.
     pub fn set_block(&mut self, block_pos: BlockPos, block_data: BlockData) -> bool {
-        if let Some(chunk_data) = self.get_chunk_mut(ChunkPos::from(block_pos)) {
-            let chunk_offset = block_pos.as_chunk_offset();
-            chunk_data.set(chunk_offset, block_data);
-
+        if let Some(block) = self.get_block_mut(block_pos) {
+            *block = block_data;
             true
         } else {
             false

@@ -31,7 +31,17 @@ pub fn destroy_block(
         },
     ) {
         // Offset the position by the negative normal to avoid error
-        let block_pos = BlockPos::from(Vec3::from(position + 0.1 * normal));
+        let mut block_pos = BlockPos::from((position - 0.1 * normal).as_ivec3());
+
+        if position.x.is_sign_positive() {
+            block_pos.x += 1;
+        }
+        if position.y.is_sign_positive() {
+            block_pos.y += 1;
+        }
+        if position.z.is_sign_positive() {
+            block_pos.z += 1;
+        }
 
         gizmos.sphere(Vec3::from(position), Quat::IDENTITY, 0.25, Color::WHITE);
 

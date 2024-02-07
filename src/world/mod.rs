@@ -21,6 +21,7 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
             .add_systems(
                 OnEnter(GameState::InGame),
                 (
+                    setup_light,
                     world_access::setup_world_access,
                     generation::setup_world_generator,
                     render::setup_chunk_data,
@@ -44,6 +45,7 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
             .add_systems(
                 OnExit(GameState::InGame),
                 (
+                    remove_light,
                     world_access::despawn_world_access,
                     generation::despawn_world_generator,
                     render::despawn_chunk_data,
@@ -51,4 +53,27 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
                 ),
             );
     }
+}
+
+fn setup_light(mut commands: Commands) {
+    commands.insert_resource(AmbientLight {
+        color: Color::WHITE,
+        brightness: 0.5,
+    });
+
+    commands.spawn(DirectionalLightBundle {
+        directional_light: DirectionalLight {
+            color: Color::WHITE,
+            illuminance: 32000.0,
+            shadows_enabled: true,
+            ..Default::default()
+        },
+        transform: Transform::from_xyz(100.0, 250.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
+        ..Default::default()
+    });
+}
+
+fn remove_light(mut commands: Commands, directional_light: Query<Entity, With<DirectionalLight>>) {
+    commands.remove_resource::<AmbientLight>();
+    commands.entity(directional_light.single()).despawn();
 }

@@ -1,5 +1,5 @@
 use bevy::{app::AppExit, prelude::*};
-use bevy_egui::{egui, EguiContexts, EguiPlugin};
+use bevy_egui::{egui, EguiContexts};
 
 use crate::{state::GameState, world::render_distance::RenderDistance};
 

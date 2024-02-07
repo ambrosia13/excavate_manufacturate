@@ -35,7 +35,7 @@ impl From<IVec3> for BlockPos {
 
 impl From<Vec3> for BlockPos {
     fn from(value: Vec3) -> Self {
-        Self::from(value.as_ivec3())
+        Self::from(value.floor().as_ivec3())
     }
 }
 

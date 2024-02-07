@@ -1,4 +1,3 @@
-use bevy::gizmos::prelude::*;
 use bevy::prelude::*;
 
 use crate::state::GameState;
@@ -32,11 +31,6 @@ fn setup_player(mut commands: Commands) {
         },
         bevy_flycam::FlyCam,
     ));
-
-    commands.insert_resource(AmbientLight {
-        color: Color::WHITE,
-        brightness: 0.5,
-    });
 
     info!("Initialized player camera");
 }

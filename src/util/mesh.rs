@@ -55,6 +55,7 @@ impl ChunkMeshBuilder {
             .extend_from_slice(&Self::get_face_indices(starting_index as u32));
     }
 
+    #[allow(clippy::wrong_self_convention)]
     pub fn as_mesh(self) -> Mesh {
         let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
 

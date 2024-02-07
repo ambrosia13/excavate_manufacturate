@@ -1,5 +1,4 @@
 use bevy::{prelude::*, utils::HashMap};
-use bevy_rapier3d::prelude::*;
 use crossbeam_queue::SegQueue;
 
 use crate::{
@@ -10,10 +9,7 @@ use crate::{
     },
 };
 
-use super::{
-    chunk::ChunkData, render_distance::RenderDistance, world_access::ExcavateManufacturateWorld,
-    CHUNK_SIZE_INT,
-};
+use super::{render_distance::RenderDistance, world_access::ExcavateManufacturateWorld};
 
 /// The currently spawned chunks.
 #[derive(Resource, Deref, DerefMut)]
