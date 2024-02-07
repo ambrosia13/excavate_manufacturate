@@ -1,4 +1,7 @@
-use bevy::prelude::*;
+use bevy::{
+    pbr::{CascadeShadowConfig, CascadeShadowConfigBuilder, DirectionalLightShadowMap},
+    prelude::*,
+};
 
 use crate::state::GameState;
 
@@ -61,6 +64,8 @@ fn setup_light(mut commands: Commands) {
         brightness: 0.5,
     });
 
+    commands.insert_resource(DirectionalLightShadowMap { size: 1024 });
+
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
             color: Color::WHITE,
@@ -68,7 +73,15 @@ fn setup_light(mut commands: Commands) {
             shadows_enabled: true,
             ..Default::default()
         },
-        transform: Transform::from_xyz(100.0, 250.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
+        cascade_shadow_config: CascadeShadowConfigBuilder {
+            num_cascades: 4,
+            minimum_distance: 0.01,
+            maximum_distance: 32.0 * CHUNK_SIZE as f32,
+            first_cascade_far_bound: 10.0,
+            overlap_proportion: 0.01,
+        }
+        .into(),
+        transform: Transform::from_xyz(150.0, 250.0, 50.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..Default::default()
     });
 }
