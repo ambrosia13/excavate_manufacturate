@@ -1,4 +1,7 @@
-use bevy::prelude::*;
+use bevy::{
+    diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin},
+    prelude::*,
+};
 use bevy_egui::{egui, EguiContexts};
 
 use crate::{
@@ -18,14 +21,25 @@ fn game_menu_system(
     mut contexts: EguiContexts,
     mut next_state: ResMut<NextState<GameState>>,
     mut render_distance: ResMut<RenderDistance>,
+    diagnostics: Res<DiagnosticsStore>,
     player_transform: Query<&Transform, With<Player>>,
 ) {
     egui::Window::new("Game Menu").show(contexts.ctx_mut(), |ui| {
+        let translation = player_transform.single().translation;
         ui.label(format!(
-            "Player position: {:?}, {}",
-            BlockPos::from(player_transform.single().translation),
-            player_transform.single().translation,
+            "Player position: {:?}; ({:.2}, {:.2}, {:.2})",
+            BlockPos::from(translation),
+            translation.x,
+            translation.y,
+            translation.z,
         ));
+
+        if let Some(fps) = diagnostics
+            .get(FrameTimeDiagnosticsPlugin::FPS)
+            .and_then(|fps| fps.smoothed())
+        {
+            ui.label(format!("Fps: {:.3}", fps));
+        }
 
         let mut render_distance_chunks = render_distance.chunks();
         ui.add(egui::Slider::new(&mut render_distance_chunks, 2..=16).text("Render distance"));

@@ -21,10 +21,7 @@ fn main() {
         }))
         .add_plugins(bevy_egui::EguiPlugin)
         .insert_resource(Msaa::Off)
-        .add_plugins((
-            bevy::diagnostic::FrameTimeDiagnosticsPlugin,
-            bevy::diagnostic::LogDiagnosticsPlugin::default(),
-        ))
+        .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
         .add_plugins((
             main_menu::ExcavateManufacturateMainMenuPlugin,
             game::ExcavateManufacturateGamePlugin,
