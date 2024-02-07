@@ -23,20 +23,35 @@ pub struct WorldGeneratorResource(Arc<WorldGenerator>);
 
 pub struct WorldGenerator {
     terrain_generator: fn(BlockPos) -> BlockData,
+    landscape_feature_generator: fn(BlockPos, &mut ExcavateManufacturateWorld),
 }
 
 impl WorldGenerator {
-    pub fn new(terrain_generator: fn(BlockPos) -> BlockData) -> Self {
-        Self { terrain_generator }
+    pub fn new(
+        terrain_generator: fn(BlockPos) -> BlockData,
+        landscape_feature_generator: fn(BlockPos, &mut ExcavateManufacturateWorld),
+    ) -> Self {
+        Self {
+            terrain_generator,
+            landscape_feature_generator,
+        }
     }
 
     pub fn generate_terrain(&self, block_pos: BlockPos) -> BlockData {
         (self.terrain_generator)(block_pos)
     }
+
+    pub fn generate_landscape_features(
+        &self,
+        block_pos: BlockPos,
+        world: &mut ExcavateManufacturateWorld,
+    ) {
+        (self.landscape_feature_generator)(block_pos, world);
+    }
 }
 
 pub fn setup_world_generator(mut commands: Commands) {
-    let world_generator = WorldGenerator::new(|block_pos| {
+    let terrain_generator = |block_pos: BlockPos| {
         let position = block_pos.as_vec3();
 
         if position.y + 10.0 * noisy_bevy::simplex_noise_2d(position.xz() * 0.025) < 20.0 {
@@ -44,13 +59,12 @@ pub fn setup_world_generator(mut commands: Commands) {
         } else {
             BlockData::Empty
         }
+    };
 
-        // if block_pos.x % 3 == 0 && block_pos.y % 3 == 0 && block_pos.z % 3 == 0 {
-        //     BlockData::Full(BlockType::Debug)
-        // } else {
-        //     BlockData::Empty
-        // }
-    });
+    let landscape_feature_generator =
+        |block_pos: BlockPos, world: &mut ExcavateManufacturateWorld| {};
+
+    let world_generator = WorldGenerator::new(terrain_generator, landscape_feature_generator);
 
     commands.insert_resource(WorldGeneratorResource(Arc::new(world_generator)));
     info!("Initialized world generator");
