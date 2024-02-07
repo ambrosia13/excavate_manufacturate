@@ -26,6 +26,18 @@ impl ChunkData {
         }
     }
 
+    pub fn for_each_mut<F: FnMut(BlockPos, &mut BlockData)>(&mut self, mut f: F) {
+        self.blocks
+            .iter_mut()
+            .enumerate()
+            .for_each(|(index, block_data)| {
+                let offset = Self::deindexify(index);
+                let block_pos = Self::block_pos_from_offset(offset);
+
+                f(block_pos, block_data);
+            });
+    }
+
     pub fn get_raw_array(&self) -> &[BlockData] {
         &self.blocks
     }
