@@ -1,4 +1,8 @@
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{
+    prelude::*,
+    tasks::{ComputeTaskPool, Task},
+    utils::HashMap,
+};
 use crossbeam_queue::SegQueue;
 
 use crate::{
@@ -9,7 +13,10 @@ use crate::{
     },
 };
 
-use super::{render_distance::RenderDistance, world_access::ExcavateManufacturateWorld};
+use super::{
+    chunk::ChunkOcclusionData, render_distance::RenderDistance,
+    world_access::ExcavateManufacturateWorld,
+};
 
 /// The currently spawned chunks.
 #[derive(Resource, Deref, DerefMut)]
@@ -62,41 +69,88 @@ pub fn populate_chunk_spawn_queue(
     }
 }
 
+#[derive(Component)]
+pub struct SpawnedChunkTask(Task<(ChunkPos, Mesh)>);
+
 pub fn spawn_chunks(
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut spawned_chunks: ResMut<SpawnedChunks>,
+    // mut meshes: ResMut<Assets<Mesh>>,
+    // mut materials: ResMut<Assets<StandardMaterial>>,
+    // mut spawned_chunks: ResMut<SpawnedChunks>,
     em_world: Res<ExcavateManufacturateWorld>,
     chunk_spawn_queue: Res<ChunkSpawnQueue>,
 ) {
+    let thread_pool = ComputeTaskPool::get();
+
     while let Some(chunk_pos) = chunk_spawn_queue.pop() {
         let Some(chunk) = em_world.get_chunk(chunk_pos) else {
             // We can't spawn an empty chunk
             continue;
         };
 
-        let mesh = chunk.get_mesh();
+        let occlusion_data = ChunkOcclusionData::from_chunk(chunk);
 
-        let entity = commands
-            .spawn((
-                MaterialMeshBundle {
-                    mesh: meshes.add(mesh),
-                    material: materials.add(StandardMaterial {
-                        base_color: Color::RED,
+        let task = thread_pool.spawn(async move { (chunk_pos, occlusion_data.get_mesh()) });
+        commands.spawn(SpawnedChunkTask(task));
+
+        // let mesh = chunk.get_mesh();
+
+        // let entity = commands
+        //     .spawn((
+        //         MaterialMeshBundle {
+        //             mesh: meshes.add(mesh),
+        //             material: materials.add(StandardMaterial {
+        //                 base_color: Color::RED,
+        //                 ..Default::default()
+        //             }),
+        //             transform: Transform::from_translation(
+        //                 BlockPos::from(chunk_pos).as_vec3() - 1.0,
+        //             ),
+        //             ..Default::default()
+        //         },
+        //         chunk_pos,
+        //     ))
+        //     .id();
+
+        // if let Some(old_chunk) = spawned_chunks.insert(chunk_pos, entity) {
+        //     commands.entity(old_chunk).despawn();
+        // }
+    }
+}
+
+pub fn poll_spawned_chunks(
+    mut commands: Commands,
+    mut tasks: Query<(Entity, &mut SpawnedChunkTask)>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut spawned_chunks: ResMut<SpawnedChunks>,
+) {
+    for (task_entity, mut task) in tasks.iter_mut() {
+        if let Some((chunk_pos, mesh)) =
+            bevy::tasks::block_on(futures_lite::future::poll_once(&mut task.0))
+        {
+            let entity = commands
+                .spawn((
+                    MaterialMeshBundle {
+                        mesh: meshes.add(mesh),
+                        material: materials.add(StandardMaterial {
+                            base_color: Color::RED,
+                            ..Default::default()
+                        }),
+                        transform: Transform::from_translation(
+                            BlockPos::from(chunk_pos).as_vec3() - 1.0,
+                        ),
                         ..Default::default()
-                    }),
-                    transform: Transform::from_translation(
-                        BlockPos::from(chunk_pos).as_vec3() - 1.0,
-                    ),
-                    ..Default::default()
-                },
-                chunk_pos,
-            ))
-            .id();
+                    },
+                    chunk_pos,
+                ))
+                .id();
 
-        if let Some(old_chunk) = spawned_chunks.insert(chunk_pos, entity) {
-            commands.entity(old_chunk).despawn();
+            if let Some(old_chunk) = spawned_chunks.insert(chunk_pos, entity) {
+                commands.entity(old_chunk).despawn();
+            }
+
+            commands.entity(task_entity).despawn();
         }
     }
 }

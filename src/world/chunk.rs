@@ -137,3 +137,60 @@ impl ChunkData {
         mesh_builder.as_mesh()
     }
 }
+
+pub struct ChunkOcclusionData {
+    blocks: [bool; CHUNK_SIZE_PADDED * CHUNK_SIZE_PADDED * CHUNK_SIZE_PADDED],
+}
+
+impl ChunkOcclusionData {
+    pub fn from_chunk(chunk_data: &ChunkData) -> Self {
+        let chunk_array = chunk_data.get_raw_array();
+
+        Self {
+            blocks: std::array::from_fn(|i| chunk_array[i].is_opaque()),
+        }
+    }
+
+    pub fn try_get_from_raw_offset(&self, offset: IVec3) -> Option<bool> {
+        self.blocks.get(ChunkData::indexify(offset)).copied()
+    }
+
+    pub fn get_mesh(&self) -> Mesh {
+        let mut mesh_builder = ChunkMeshBuilder::new();
+
+        for x in 1..(CHUNK_SIZE_INT + 1) {
+            for y in 1..(CHUNK_SIZE_INT + 1) {
+                for z in 1..(CHUNK_SIZE_INT + 1) {
+                    let offset = IVec3::new(x, y, z);
+                    let index = ChunkData::indexify(offset);
+
+                    let offset_without_padding = ChunkData::block_pos_from_offset(offset).inner();
+
+                    let block = self.blocks[index];
+
+                    // if block has no geometry, don't add faces for it
+                    if !block {
+                        continue;
+                    }
+
+                    for ((dx, dy, dz), face, normals, uvs) in util::mesh::NEIGHBOR_DATA {
+                        let neighbor_pos = offset + IVec3::new(dx, dy, dz);
+
+                        if let Some(neighbor) = self.try_get_from_raw_offset(neighbor_pos) {
+                            if !neighbor {
+                                mesh_builder.add_face(
+                                    face,
+                                    normals,
+                                    uvs,
+                                    offset_without_padding.as_vec3(),
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        mesh_builder.as_mesh()
+    }
+}

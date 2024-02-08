@@ -40,7 +40,7 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
                     )
                         .chain(),
                     render::populate_chunk_spawn_queue,
-                    render::spawn_chunks,
+                    (render::poll_spawned_chunks, render::spawn_chunks).chain(),
                     render::despawn_chunks,
                 )
                     .run_if(in_state(GameState::InGame)),
