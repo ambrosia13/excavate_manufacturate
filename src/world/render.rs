@@ -39,13 +39,12 @@ pub fn despawn_chunk_data(mut commands: Commands) {
 }
 
 pub fn populate_chunk_spawn_queue(
-    player_transform: Query<&Transform, With<Player>>,
+    player_query: Query<&ChunkPos, With<Player>>,
     chunk_spawn_queue: Res<ChunkSpawnQueue>,
     render_distance: Res<RenderDistance>,
     spawned_chunks: Res<SpawnedChunks>,
 ) {
-    let player_translation = player_transform.single().translation;
-    let player_chunk_pos = ChunkPos::from(BlockPos::from(player_translation));
+    let player_chunk_pos = *player_query.single();
 
     let lower = -render_distance.chunks();
     let upper = render_distance.chunks();
@@ -105,12 +104,11 @@ pub fn spawn_chunks(
 pub fn despawn_chunks(
     mut commands: Commands,
     chunks_query: Query<&ChunkPos>,
-    player_transform: Query<&Transform, With<Player>>,
+    player_query: Query<&ChunkPos, With<Player>>,
     render_distance: Res<RenderDistance>,
     mut spawned_chunks: ResMut<SpawnedChunks>,
 ) {
-    let player_translation = player_transform.single().translation;
-    let player_chunk_pos = ChunkPos::from(BlockPos::from(player_translation));
+    let player_chunk_pos = *player_query.single();
 
     for &chunk_pos in chunks_query.iter() {
         let local_chunk_pos = LocalChunkPos::from(chunk_pos, player_chunk_pos);

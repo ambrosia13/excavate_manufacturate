@@ -118,10 +118,9 @@ pub fn generate_chunks_on_thread_pool(
     em_world: Res<ExcavateManufacturateWorld>,
     world_generator: Res<WorldGeneratorResource>,
     render_distance: Res<RenderDistance>,
-    player_transform: Query<&Transform, With<Player>>,
+    player_query: Query<&ChunkPos, With<Player>>,
 ) {
-    let player_translation = player_transform.single().translation;
-    let player_chunk_pos = ChunkPos::from(BlockPos::from(player_translation));
+    let player_chunk_pos = *player_query.single();
 
     let lower = -render_distance.chunks();
     let upper = render_distance.chunks();
