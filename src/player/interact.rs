@@ -24,10 +24,7 @@ pub fn destroy_block(
             let block_pos = BlockPos::from(pos);
             ev_world
                 .get_block(block_pos)
-                .is_some_and(|block_data| match block_data {
-                    BlockData::Empty => false,
-                    BlockData::Full(_) => true,
-                })
+                .is_some_and(|block_data| block_data.is_some())
         },
     ) {
         // Offset the position by the negative normal to avoid error
@@ -45,7 +42,7 @@ pub fn destroy_block(
 
         gizmos.sphere(Vec3::from(position), Quat::IDENTITY, 0.25, Color::WHITE);
 
-        if input.just_pressed(KeyCode::B) && ev_world.set_block(block_pos, BlockData::Empty) {
+        if input.just_pressed(KeyCode::B) && ev_world.set_block(block_pos, BlockData::None) {
             chunk_spawn_queue.push(ChunkPos::from(block_pos));
             info!(
                 "Successfully removed block at {:?}. Player position is {:?}",

@@ -3,7 +3,11 @@ use crate::{
     world::CHUNK_SIZE_INT,
 };
 
-use super::{block::BlockData, CHUNK_SIZE_PADDED};
+use super::{
+    block::registry::BlockRegistry,
+    block::{BlockData, BlockType},
+    CHUNK_SIZE_PADDED,
+};
 use bevy::prelude::*;
 
 pub struct ChunkData {
@@ -13,7 +17,7 @@ pub struct ChunkData {
 impl ChunkData {
     pub fn empty() -> Self {
         Self {
-            blocks: std::array::from_fn(|_| BlockData::Empty),
+            blocks: std::array::from_fn(|_| BlockData::None),
         }
     }
 
@@ -98,7 +102,7 @@ impl ChunkData {
         self.blocks[Self::indexify(offset)] = block;
     }
 
-    pub fn get_mesh(&self) -> Mesh {
+    pub fn get_mesh(&self, block_registry: &BlockRegistry) -> Mesh {
         let mut mesh_builder = ChunkMeshBuilder::new();
 
         for x in 1..(CHUNK_SIZE_INT + 1) {
@@ -111,21 +115,25 @@ impl ChunkData {
 
                     let block = &self.blocks[index];
 
-                    // if block has no geometry, don't add faces for it
-                    if !block.has_geometry() {
+                    let BlockData::Some(block_type) = block else {
                         continue;
-                    }
+                    };
+
+                    let static_block_data =
+                        block_registry.static_block_data.get(block_type.id).unwrap();
 
                     for ((dx, dy, dz), face, normals, uvs) in util::mesh::NEIGHBOR_DATA {
                         let neighbor_pos = offset + IVec3::new(dx, dy, dz);
 
                         if let Some(neighbor) = self.try_get_from_raw_offset(neighbor_pos) {
-                            if !neighbor.is_opaque() {
+                            if !neighbor.is_some() {
                                 mesh_builder.add_face(
                                     face,
                                     normals,
                                     uvs,
                                     offset_without_padding.as_vec3(),
+                                    static_block_data.atlas_coordinates,
+                                    block_registry.atlas_size,
                                 );
                             }
                         }

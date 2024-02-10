@@ -9,7 +9,11 @@ use crate::{
     },
 };
 
-use super::{render_distance::RenderDistance, world_access::ExcavateManufacturateWorld};
+use super::{
+    block::registry::{BlockRegistry, TextureAtlasHandle},
+    render_distance::RenderDistance,
+    world_access::ExcavateManufacturateWorld,
+};
 
 /// The currently spawned chunks.
 #[derive(Resource, Deref, DerefMut)]
@@ -69,6 +73,8 @@ pub fn spawn_chunks(
     mut spawned_chunks: ResMut<SpawnedChunks>,
     em_world: Res<ExcavateManufacturateWorld>,
     chunk_spawn_queue: Res<ChunkSpawnQueue>,
+    block_registry: Res<BlockRegistry>,
+    texture_atlas_handle: Res<TextureAtlasHandle>,
 ) {
     while let Some(chunk_pos) = chunk_spawn_queue.pop() {
         let Some(chunk) = em_world.get_chunk(chunk_pos) else {
@@ -76,14 +82,15 @@ pub fn spawn_chunks(
             continue;
         };
 
-        let mesh = chunk.get_mesh();
+        let mesh = chunk.get_mesh(&block_registry);
 
         let entity = commands
             .spawn((
                 MaterialMeshBundle {
                     mesh: meshes.add(mesh),
                     material: materials.add(StandardMaterial {
-                        base_color: Color::RED,
+                        base_color: Color::WHITE,
+                        base_color_texture: Some(texture_atlas_handle.clone_weak()),
                         ..Default::default()
                     }),
                     transform: Transform::from_translation(

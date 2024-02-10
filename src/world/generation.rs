@@ -8,6 +8,7 @@ use bevy::{
 use crate::{
     player::Player,
     util::{block_pos::BlockPos, chunk_pos::ChunkPos},
+    world::block,
 };
 
 use super::{
@@ -22,49 +23,39 @@ use crate::world::world_access::ExcavateManufacturateWorld;
 pub struct WorldGeneratorResource(Arc<WorldGenerator>);
 
 pub struct WorldGenerator {
-    terrain_generator: fn(BlockPos) -> BlockData,
-    landscape_feature_generator: fn(BlockPos, &mut ExcavateManufacturateWorld),
+    pub terrain_noise: fn(BlockPos) -> BlockData,
+    pub landscape_feature_generator: fn(BlockPos, &mut ExcavateManufacturateWorld),
 }
 
 impl WorldGenerator {
-    pub fn new(
-        terrain_generator: fn(BlockPos) -> BlockData,
-        landscape_feature_generator: fn(BlockPos, &mut ExcavateManufacturateWorld),
-    ) -> Self {
-        Self {
-            terrain_generator,
-            landscape_feature_generator,
-        }
-    }
+    // pub fn new(
+    //     terrain_noise: fn(BlockPos) -> BlockData,
+    //     landscape_feature_generator: fn(BlockPos, &mut ExcavateManufacturateWorld),
+    // ) -> Self {
+    //     Self {
+    //         terrain_noise,
+    //         landscape_feature_generator,
+    //     }
+    // }
 
-    pub fn generate_terrain(&self, block_pos: BlockPos) -> BlockData {
-        (self.terrain_generator)(block_pos)
-    }
-
-    pub fn generate_landscape_features(
-        &self,
-        block_pos: BlockPos,
-        world: &mut ExcavateManufacturateWorld,
-    ) {
-        (self.landscape_feature_generator)(block_pos, world);
+    pub fn generate_terrain_noise(&self, block_pos: BlockPos) -> BlockData {
+        (self.terrain_noise)(block_pos)
     }
 }
 
 pub fn setup_world_generator(mut commands: Commands) {
-    let terrain_generator = |block_pos: BlockPos| {
-        let position = block_pos.as_vec3();
+    let world_generator = WorldGenerator {
+        terrain_noise: |block_pos| {
+            let position = block_pos.as_vec3();
 
-        if position.y + 10.0 * noisy_bevy::simplex_noise_2d(position.xz() * 0.025) < 20.0 {
-            BlockData::Full(BlockType::Debug)
-        } else {
-            BlockData::Empty
-        }
+            if position.y + 10.0 * noisy_bevy::simplex_noise_2d(position.xz() * 0.025) < 20.0 {
+                BlockData::Some(block::excavatemanufacturate_blocks::block_types::GRASS)
+            } else {
+                BlockData::None
+            }
+        },
+        landscape_feature_generator: |_, _| {},
     };
-
-    let landscape_feature_generator =
-        |block_pos: BlockPos, world: &mut ExcavateManufacturateWorld| {};
-
-    let world_generator = WorldGenerator::new(terrain_generator, landscape_feature_generator);
 
     commands.insert_resource(WorldGeneratorResource(Arc::new(world_generator)));
     info!("Initialized world generator");
@@ -101,7 +92,7 @@ pub fn generate_chunks(
 
                 let chunk_data = ChunkData::with_data(|block_pos| {
                     let block_pos = block_pos + BlockPos::from(chunk_pos);
-                    world_generator.generate_terrain(block_pos)
+                    world_generator.generate_terrain_noise(block_pos)
                 });
 
                 em_world.insert_chunk(chunk_pos, chunk_data);
@@ -142,7 +133,7 @@ pub fn generate_chunks_on_thread_pool(
                 let task = thread_pool.spawn(async move {
                     let chunk_data = ChunkData::with_data(|block_pos| {
                         let block_pos = block_pos + BlockPos::from(chunk_pos);
-                        world_generator.generate_terrain(block_pos)
+                        world_generator.generate_terrain_noise(block_pos)
                     });
 
                     (chunk_pos, chunk_data)

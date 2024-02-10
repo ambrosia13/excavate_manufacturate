@@ -3,6 +3,8 @@ use bevy::{
     render::{mesh::Indices, render_resource::PrimitiveTopology},
 };
 
+use crate::world::block::static_block_data::AtlasCoordinates;
+
 pub struct ChunkMeshBuilder {
     pub vertices: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
@@ -31,12 +33,41 @@ impl ChunkMeshBuilder {
         ]
     }
 
+    fn transform_uvs(
+        uvs: &mut [[f32; 2]; 4],
+        atlas_coords: AtlasCoordinates,
+        atlas_size: (usize, usize),
+    ) {
+        let one_texel = (1.0 / atlas_size.0 as f32, 1.0 / atlas_size.1 as f32);
+
+        let starting_x = atlas_coords.min.0;
+        let starting_y = atlas_coords.min.1;
+
+        let ending_x = atlas_coords.max.0;
+        let ending_y = atlas_coords.max.1;
+
+        for uv in uvs.iter_mut() {
+            if uv[0] < 0.5 {
+                uv[0] = starting_x as f32 * one_texel.0;
+            } else {
+                uv[0] = ending_x as f32 * one_texel.0;
+            }
+
+            if uv[1] < 0.5 {
+                uv[1] = starting_y as f32 * one_texel.1;
+            } else {
+                uv[1] = ending_y as f32 * one_texel.1;
+            }
+        }
+    }
     pub fn add_face(
         &mut self,
         mut face: [[f32; 3]; 4],
         normals: [[f32; 3]; 4],
-        uvs: [[f32; 2]; 4],
+        mut uvs: [[f32; 2]; 4],
         offset: Vec3,
+        atlas_coords: AtlasCoordinates,
+        atlas_size: (usize, usize),
     ) {
         #[allow(clippy::needless_range_loop)]
         for i in 0..4 {
@@ -44,6 +75,8 @@ impl ChunkMeshBuilder {
                 face[i][j] += offset[j];
             }
         }
+
+        Self::transform_uvs(&mut uvs, atlas_coords, atlas_size);
 
         let starting_index = self.vertices.len();
 
