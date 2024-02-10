@@ -4,6 +4,7 @@ pub struct AtlasCoordinates {
     pub max: (u16, u16),
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum BlockHardnessLevel {
     Hand,
     ToolStrength(u8),

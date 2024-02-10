@@ -7,6 +7,7 @@ use super::CHUNK_SIZE_INT;
 #[derive(Resource)]
 pub struct RenderDistance(usize);
 
+#[allow(unused)]
 impl RenderDistance {
     pub fn new(chunks: usize) -> Self {
         Self(chunks)

@@ -66,6 +66,7 @@ pub fn populate_chunk_spawn_queue(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn spawn_chunks(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,

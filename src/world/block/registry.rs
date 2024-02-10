@@ -1,9 +1,6 @@
 use bevy::{prelude::*, utils::HashMap};
 
-use super::{
-    excavatemanufacturate_blocks,
-    static_block_data::{AtlasCoordinates, StaticBlockData},
-};
+use super::{excavatemanufacturate_blocks, static_block_data::StaticBlockData};
 
 #[derive(Resource)]
 pub struct BlockRegistry {

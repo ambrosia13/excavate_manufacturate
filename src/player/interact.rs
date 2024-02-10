@@ -2,7 +2,11 @@ use bevy::prelude::*;
 
 use crate::{
     util::{self, block_pos::BlockPos, chunk_pos::ChunkPos, raytrace::Hit},
-    world::{block::BlockData, render::ChunkSpawnQueue, world_access::ExcavateManufacturateWorld},
+    world::{
+        block::{registry::BlockRegistry, static_block_data::BlockHardnessLevel, BlockData},
+        render::ChunkSpawnQueue,
+        world_access::ExcavateManufacturateWorld,
+    },
 };
 
 use super::Player;
@@ -13,6 +17,7 @@ pub fn destroy_block(
     mut ev_world: ResMut<ExcavateManufacturateWorld>,
     chunk_spawn_queue: Res<ChunkSpawnQueue>,
     mut gizmos: Gizmos,
+    block_registry: Res<BlockRegistry>,
 ) {
     let player_transform = player_transform.single();
 
@@ -42,7 +47,19 @@ pub fn destroy_block(
 
         gizmos.sphere(Vec3::from(position), Quat::IDENTITY, 0.25, Color::WHITE);
 
-        if input.just_pressed(KeyCode::B) && ev_world.set_block(block_pos, BlockData::None) {
+        let block_data = ev_world.get_block(block_pos);
+
+        let block_can_be_destroyed = block_data.is_some_and(|block_data| {
+            block_data.as_ref().is_some_and(|block_type| {
+                block_registry.get_block_data(block_type.id).hardness
+                    != BlockHardnessLevel::Unbreakable
+            })
+        });
+
+        if block_can_be_destroyed
+            && input.just_pressed(KeyCode::B)
+            && ev_world.set_block(block_pos, BlockData::None)
+        {
             chunk_spawn_queue.push(ChunkPos::from(block_pos));
             info!(
                 "Successfully removed block at {:?}. Player position is {:?}",

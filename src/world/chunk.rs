@@ -3,17 +3,14 @@ use crate::{
     world::CHUNK_SIZE_INT,
 };
 
-use super::{
-    block::registry::BlockRegistry,
-    block::{BlockData, BlockType},
-    CHUNK_SIZE_PADDED,
-};
+use super::{block::registry::BlockRegistry, block::BlockData, CHUNK_SIZE_PADDED};
 use bevy::prelude::*;
 
 pub struct ChunkData {
     blocks: [BlockData; CHUNK_SIZE_PADDED * CHUNK_SIZE_PADDED * CHUNK_SIZE_PADDED],
 }
 
+#[allow(unused)]
 impl ChunkData {
     pub fn empty() -> Self {
         Self {
