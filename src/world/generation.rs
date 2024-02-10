@@ -2,7 +2,8 @@ use std::sync::Arc;
 
 use bevy::{
     prelude::*,
-    tasks::{ComputeTaskPool, Task},
+    tasks::{AsyncComputeTaskPool, Task},
+    utils::HashSet,
 };
 
 use crate::{
@@ -12,7 +13,7 @@ use crate::{
 };
 
 use super::{
-    block::{BlockData, BlockType},
+    block::BlockData,
     chunk::ChunkData,
     render::{ChunkSpawnQueue, SpawnedChunks},
     render_distance::RenderDistance,
@@ -28,16 +29,6 @@ pub struct WorldGenerator {
 }
 
 impl WorldGenerator {
-    // pub fn new(
-    //     terrain_noise: fn(BlockPos) -> BlockData,
-    //     landscape_feature_generator: fn(BlockPos, &mut ExcavateManufacturateWorld),
-    // ) -> Self {
-    //     Self {
-    //         terrain_noise,
-    //         landscape_feature_generator,
-    //     }
-    // }
-
     pub fn generate_terrain_noise(&self, block_pos: BlockPos) -> BlockData {
         (self.terrain_noise)(block_pos)
     }
@@ -61,7 +52,7 @@ pub fn setup_world_generator(mut commands: Commands) {
     info!("Initialized world generator");
 }
 
-pub fn despawn_world_generator(mut commands: Commands) {
+pub fn remove_world_generator(mut commands: Commands) {
     commands.remove_resource::<WorldGeneratorResource>();
     info!("Removed world generator");
 }
@@ -101,6 +92,19 @@ pub fn generate_chunks(
     }
 }
 
+#[derive(Resource, Deref, DerefMut)]
+pub struct PossiblyGeneratedChunks(HashSet<ChunkPos>);
+
+pub fn setup_chunk_generation_structures(mut commands: Commands) {
+    commands.insert_resource(PossiblyGeneratedChunks(HashSet::new()));
+    info!("Initialized chunk generation data structures");
+}
+
+pub fn remove_chunk_generation_structures(mut commands: Commands) {
+    commands.remove_resource::<PossiblyGeneratedChunks>();
+    info!("Removed chunk generation data structures");
+}
+
 #[derive(Component)]
 pub struct GeneratedChunkTask(Task<(ChunkPos, ChunkData)>);
 
@@ -110,21 +114,24 @@ pub fn generate_chunks_on_thread_pool(
     world_generator: Res<WorldGeneratorResource>,
     render_distance: Res<RenderDistance>,
     player_query: Query<&ChunkPos, With<Player>>,
+    mut possibly_generated_chunks: ResMut<PossiblyGeneratedChunks>,
 ) {
     let player_chunk_pos = *player_query.single();
 
     let lower = -render_distance.chunks();
     let upper = render_distance.chunks();
 
-    let thread_pool = ComputeTaskPool::get();
+    let thread_pool = AsyncComputeTaskPool::get();
 
     for x_offset in lower..=upper {
         for y_offset in lower..=upper {
             for z_offset in lower..=upper {
                 let chunk_pos = player_chunk_pos + ChunkPos::new(x_offset, y_offset, z_offset);
 
-                // Don't generate a chunk that already exists
-                if em_world.chunk_exists(chunk_pos) {
+                // If the chunk has already been set for generation, or has already been generated, skip this
+                if possibly_generated_chunks.contains(&chunk_pos)
+                    || em_world.chunk_exists(chunk_pos)
+                {
                     continue;
                 }
 
@@ -140,6 +147,7 @@ pub fn generate_chunks_on_thread_pool(
                 });
 
                 commands.spawn(GeneratedChunkTask(task));
+                possibly_generated_chunks.insert(chunk_pos); // mark this chunk as being generated
             }
         }
     }

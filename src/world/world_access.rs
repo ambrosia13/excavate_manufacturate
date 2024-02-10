@@ -68,7 +68,7 @@ pub fn setup_world_access(mut commands: Commands) {
     info!("Initialized world");
 }
 
-pub fn despawn_world_access(mut commands: Commands) {
+pub fn remove_world_access(mut commands: Commands) {
     commands.remove_resource::<ExcavateManufacturateWorld>();
     info!("Removed world");
 }

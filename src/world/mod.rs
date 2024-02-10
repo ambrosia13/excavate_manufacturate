@@ -33,7 +33,8 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
                 setup_light,
                 world_access::setup_world_access,
                 generation::setup_world_generator,
-                render::setup_chunk_data,
+                generation::setup_chunk_generation_structures,
+                render::setup_chunk_spawning_structures,
             ),
         )
         .add_systems(
@@ -43,8 +44,7 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
                     // Multithreaded chunk generation
                     generation::poll_generated_chunks,
                     generation::generate_chunks_on_thread_pool,
-                )
-                    .chain(),
+                ),
                 render::populate_chunk_spawn_queue,
                 render::spawn_chunks,
                 render::despawn_chunks,
@@ -55,9 +55,10 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
             OnExit(GameState::InGame),
             (
                 remove_light,
-                world_access::despawn_world_access,
-                generation::despawn_world_generator,
-                render::despawn_chunk_data,
+                world_access::remove_world_access,
+                generation::remove_world_generator,
+                generation::remove_chunk_generation_structures,
+                render::remove_chunk_spawning_structures,
                 render::despawn_all_chunks,
             ),
         );

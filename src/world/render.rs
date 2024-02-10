@@ -26,20 +26,20 @@ pub struct ChunkMeshes(HashMap<ChunkPos, Handle<Mesh>>);
 #[derive(Resource, Deref, DerefMut)]
 pub struct ChunkSpawnQueue(SegQueue<ChunkPos>);
 
-pub fn setup_chunk_data(mut commands: Commands) {
+pub fn setup_chunk_spawning_structures(mut commands: Commands) {
     commands.insert_resource(SpawnedChunks(HashMap::new()));
     commands.insert_resource(ChunkMeshes(HashMap::new()));
     commands.insert_resource(ChunkSpawnQueue(SegQueue::new()));
 
-    info!("Initialized chunk data structures");
+    info!("Initialized chunk spawning data structures");
 }
 
-pub fn despawn_chunk_data(mut commands: Commands) {
+pub fn remove_chunk_spawning_structures(mut commands: Commands) {
     commands.remove_resource::<SpawnedChunks>();
     commands.remove_resource::<ChunkMeshes>();
     commands.remove_resource::<ChunkSpawnQueue>();
 
-    info!("Removed chunk data structures");
+    info!("Removed chunk spawning data structures");
 }
 
 pub fn populate_chunk_spawn_queue(
