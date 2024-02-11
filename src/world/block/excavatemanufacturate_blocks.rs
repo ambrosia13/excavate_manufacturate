@@ -3,6 +3,7 @@ pub mod block_ids {
 
     pub const GRASS: &str = "excavatemanufacturate/grass";
     pub const DIRT: &str = "excavatemanufacturate/dirt";
+    pub const BEDROCK: &str = "excavatemanufacturate/bedrock";
 }
 
 pub mod block_types {
@@ -12,6 +13,7 @@ pub mod block_types {
 
     pub const GRASS: BlockType = BlockType::new_static(block_ids::GRASS);
     pub const DIRT: BlockType = BlockType::new_static(block_ids::DIRT);
+    pub const BEDROCK: BlockType = BlockType::new_static(block_ids::BEDROCK);
 }
 
 pub mod block_data {
@@ -32,5 +34,12 @@ pub mod block_data {
             max: (15, 31),
         },
         hardness: BlockHardnessLevel::Hand,
+    };
+    pub const BEDROCK: StaticBlockData = StaticBlockData {
+        atlas_coordinates: AtlasCoordinates {
+            min: (16, 16),
+            max: (31, 31),
+        },
+        hardness: BlockHardnessLevel::Unbreakable,
     };
 }

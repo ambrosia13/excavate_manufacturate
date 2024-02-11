@@ -37,12 +37,30 @@ impl WorldGenerator {
 pub fn setup_world_generator(mut commands: Commands) {
     let world_generator = WorldGenerator {
         terrain_noise: |block_pos| {
-            let position = block_pos.as_vec3();
+            use block::excavatemanufacturate_blocks::block_types::*;
 
-            if position.y + 10.0 * noisy_bevy::simplex_noise_2d(position.xz() * 0.025) < 20.0 {
-                BlockData::Some(block::excavatemanufacturate_blocks::block_types::GRASS)
-            } else {
-                BlockData::None
+            match block_pos.y.cmp(&0) {
+                std::cmp::Ordering::Less => BlockData::None,
+                std::cmp::Ordering::Equal => BlockData::Some(BEDROCK),
+                std::cmp::Ordering::Greater => {
+                    let position = block_pos.as_vec3();
+
+                    let hills_generator = |position: Vec3| {
+                        position.y + 10.0 * noisy_bevy::simplex_noise_2d(position.xz() * 0.025)
+                            < 20.0
+                    };
+
+                    if hills_generator(position) {
+                        if hills_generator(position + Vec3::Y) {
+                            // Grass is above this block
+                            BlockData::Some(DIRT)
+                        } else {
+                            BlockData::Some(GRASS)
+                        }
+                    } else {
+                        BlockData::None
+                    }
+                }
             }
         },
         landscape_feature_generator: |_, _| {},

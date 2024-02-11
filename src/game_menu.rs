@@ -22,16 +22,13 @@ fn game_menu_system(
     mut next_state: ResMut<NextState<GameState>>,
     mut render_distance: ResMut<RenderDistance>,
     diagnostics: Res<DiagnosticsStore>,
-    player_transform: Query<&Transform, With<Player>>,
+    player_transform: Query<(&Transform, &BlockPos), With<Player>>,
 ) {
     egui::Window::new("Game Menu").show(contexts.ctx_mut(), |ui| {
-        let translation = player_transform.single().translation;
+        let (Transform { translation, .. }, block_pos) = player_transform.single();
         ui.label(format!(
             "Player position: {:?}; ({:.2}, {:.2}, {:.2})",
-            BlockPos::from(translation),
-            translation.x,
-            translation.y,
-            translation.z,
+            block_pos, translation.x, translation.y, translation.z,
         ));
 
         if let Some(fps) = diagnostics

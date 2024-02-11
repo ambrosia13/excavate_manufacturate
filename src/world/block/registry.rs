@@ -46,6 +46,10 @@ pub fn setup_block_registry(mut commands: Commands, mut assets: ResMut<Assets<Im
         excavatemanufacturate_blocks::block_ids::DIRT,
         excavatemanufacturate_blocks::block_data::DIRT,
     );
+    block_registry.static_block_data.insert(
+        excavatemanufacturate_blocks::block_ids::BEDROCK,
+        excavatemanufacturate_blocks::block_data::BEDROCK,
+    );
 
     commands.insert_resource(block_registry);
 }
