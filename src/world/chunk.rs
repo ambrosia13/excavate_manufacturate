@@ -1,30 +1,40 @@
-use crate::{
-    util::{self, block_pos::BlockPos, mesh::ChunkMeshBuilder},
-    world::CHUNK_SIZE_INT,
-};
+use crate::util::{self, block_pos::BlockPos, chunk_pos::ChunkPos, mesh::ChunkMeshBuilder};
 
-use super::{block::registry::BlockRegistry, block::BlockData, CHUNK_SIZE_PADDED};
+use super::{
+    block::{registry::BlockRegistry, BlockData},
+    world_access::ExcavateManufacturateWorld,
+    CHUNK_SIZE,
+};
 use bevy::prelude::*;
 
 pub struct ChunkData {
-    blocks: [BlockData; CHUNK_SIZE_PADDED * CHUNK_SIZE_PADDED * CHUNK_SIZE_PADDED],
+    blocks: Vec<BlockData>,
+    scale: i32,
 }
 
-#[allow(unused)]
 impl ChunkData {
-    pub fn empty() -> Self {
+    pub fn empty(scale: i32) -> Self {
+        let chunk_size = Self::get_scaled_chunk_size(scale);
+
         Self {
-            blocks: std::array::from_fn(|_| BlockData::None),
+            blocks: vec![BlockData::None; chunk_size * chunk_size * chunk_size],
+            scale,
         }
     }
 
-    pub fn with_data<F: FnMut(BlockPos) -> BlockData>(mut supplier: F) -> Self {
+    pub fn with_data<F: FnMut(BlockPos) -> BlockData>(scale: i32, mut supplier: F) -> Self {
+        let chunk_size = Self::get_scaled_chunk_size(scale);
+
         Self {
-            blocks: std::array::from_fn(|i| {
-                let offset = Self::deindexify(i);
-                supplier(Self::block_pos_from_offset(offset))
-            }),
+            blocks: (0..(chunk_size * chunk_size * chunk_size))
+                .map(|i| supplier(BlockPos::from(Self::deindexify(i, scale) * scale)))
+                .collect(),
+            scale,
         }
+    }
+
+    pub fn get_scaled_chunk_size(scale: i32) -> usize {
+        CHUNK_SIZE / scale as usize
     }
 
     pub fn for_each_mut<F: FnMut(BlockPos, &mut BlockData)>(&mut self, mut f: F) {
@@ -32,8 +42,8 @@ impl ChunkData {
             .iter_mut()
             .enumerate()
             .for_each(|(index, block_data)| {
-                let offset = Self::deindexify(index);
-                let block_pos = Self::block_pos_from_offset(offset);
+                let offset = Self::deindexify(index, self.scale);
+                let block_pos = BlockPos::from(offset * self.scale);
 
                 f(block_pos, block_data);
             });
@@ -43,72 +53,72 @@ impl ChunkData {
         &self.blocks
     }
 
-    pub fn block_pos_from_offset(offset: IVec3) -> BlockPos {
-        // (1, 1, 1) -> (0, 0, 0)
-        BlockPos::from(offset - 1)
-    }
+    pub fn indexify(offset: IVec3, scale: i32) -> usize {
+        let scaled_chunk_size = Self::get_scaled_chunk_size(scale);
 
-    pub fn offset_from_block_pos(block_pos: BlockPos) -> IVec3 {
-        // (0, 0, 0) -> (1, 1, 1)
-        block_pos.as_chunk_offset().inner() + 1
-    }
-
-    pub fn indexify(offset: IVec3) -> usize {
-        (offset.z as usize * CHUNK_SIZE_PADDED * CHUNK_SIZE_PADDED)
-            + (offset.y as usize * CHUNK_SIZE_PADDED)
+        (offset.z as usize * scaled_chunk_size * scaled_chunk_size)
+            + (offset.y as usize * scaled_chunk_size)
             + offset.x as usize
     }
 
-    pub fn deindexify(index: usize) -> IVec3 {
-        let z = index / (CHUNK_SIZE_PADDED * CHUNK_SIZE_PADDED);
-        let y = (index % (CHUNK_SIZE_PADDED * CHUNK_SIZE_PADDED)) / CHUNK_SIZE_PADDED;
-        let x = index % CHUNK_SIZE_PADDED;
+    pub fn deindexify(index: usize, scale: i32) -> IVec3 {
+        let scaled_chunk_size = Self::get_scaled_chunk_size(scale);
+
+        let z = index / (scaled_chunk_size * scaled_chunk_size);
+        let y = (index % (scaled_chunk_size * scaled_chunk_size)) / scaled_chunk_size;
+        let x = index % scaled_chunk_size;
 
         IVec3::new(x as i32, y as i32, z as i32)
     }
 
     pub fn get(&self, block_pos: BlockPos) -> &BlockData {
-        let offset = Self::offset_from_block_pos(block_pos);
-        &self.blocks[Self::indexify(offset)]
+        let offset = block_pos.as_chunk_offset().inner() / self.scale;
+        &self.blocks[Self::indexify(offset, self.scale)]
     }
 
     pub fn get_mut(&mut self, block_pos: BlockPos) -> &mut BlockData {
-        let offset = Self::offset_from_block_pos(block_pos);
-        &mut self.blocks[Self::indexify(offset)]
+        let offset = block_pos.as_chunk_offset().inner() / self.scale;
+        &mut self.blocks[Self::indexify(offset, self.scale)]
     }
 
     pub fn try_get(&self, block_pos: BlockPos) -> Option<&BlockData> {
-        let offset = Self::offset_from_block_pos(block_pos);
-        self.blocks.get(Self::indexify(offset))
+        let offset = block_pos.as_chunk_offset().inner() / self.scale;
+        self.blocks.get(Self::indexify(offset, self.scale))
     }
 
     pub fn set(&mut self, block_pos: BlockPos, block: BlockData) {
-        let offset = Self::offset_from_block_pos(block_pos);
-        self.blocks[Self::indexify(offset)] = block;
+        let offset = block_pos.as_chunk_offset().inner() / self.scale;
+        self.blocks[Self::indexify(offset, self.scale)] = block;
     }
 
     pub fn get_from_raw_offset(&self, offset: IVec3) -> &BlockData {
-        &self.blocks[Self::indexify(offset)]
+        &self.blocks[Self::indexify(offset, self.scale)]
     }
 
     pub fn try_get_from_raw_offset(&self, offset: IVec3) -> Option<&BlockData> {
-        self.blocks.get(Self::indexify(offset))
+        self.blocks.get(Self::indexify(offset, self.scale))
     }
 
     pub fn set_from_raw_offset(&mut self, offset: IVec3, block: BlockData) {
-        self.blocks[Self::indexify(offset)] = block;
+        self.blocks[Self::indexify(offset, self.scale)] = block;
     }
 
-    pub fn get_mesh(&self, block_registry: &BlockRegistry) -> Mesh {
+    pub fn get_mesh(
+        &self,
+        chunk_pos: ChunkPos,
+        block_registry: &BlockRegistry,
+        world: &ExcavateManufacturateWorld,
+    ) -> Mesh {
         let mut mesh_builder = ChunkMeshBuilder::new();
 
-        for x in 1..(CHUNK_SIZE_INT + 1) {
-            for y in 1..(CHUNK_SIZE_INT + 1) {
-                for z in 1..(CHUNK_SIZE_INT + 1) {
-                    let offset = IVec3::new(x, y, z);
-                    let index = Self::indexify(offset);
+        let scale = self.scale;
+        let scaled_chunk_size = Self::get_scaled_chunk_size(scale) as i32;
 
-                    let offset_without_padding = Self::block_pos_from_offset(offset).inner();
+        for x in 0..scaled_chunk_size {
+            for y in 0..scaled_chunk_size {
+                for z in 0..scaled_chunk_size {
+                    let offset = IVec3::new(x, y, z);
+                    let index = Self::indexify(offset, scale);
 
                     let block = &self.blocks[index];
 
@@ -116,22 +126,42 @@ impl ChunkData {
                         continue;
                     };
 
-                    let static_block_data = block_registry.get_block_data(block_type.id);
-
                     for ((dx, dy, dz), face, normals, uvs) in util::mesh::NEIGHBOR_DATA {
                         let neighbor_pos = offset + IVec3::new(dx, dy, dz);
 
-                        if let Some(neighbor) = self.try_get_from_raw_offset(neighbor_pos) {
-                            if !neighbor.is_some() {
-                                mesh_builder.add_face(
-                                    face,
-                                    normals,
-                                    uvs,
-                                    offset_without_padding.as_vec3(),
-                                    static_block_data.atlas_coordinates,
-                                    block_registry.atlas_size,
-                                );
-                            }
+                        let neighbor_exists_in_chunk = neighbor_pos.cmpge(IVec3::splat(0)).all()
+                            && neighbor_pos
+                                .cmple(IVec3::splat(scaled_chunk_size - 1))
+                                .all();
+
+                        let add_face = if neighbor_exists_in_chunk {
+                            // We can get occlusion info from the chunk data itself
+                            self.try_get_from_raw_offset(neighbor_pos)
+                                .is_some_and(|block_data| block_data.is_none())
+                        } else {
+                            let neighbor_pos = (offset + IVec3::new(dx, dy, dz)) * scale;
+                            let world_neighbor_pos =
+                                BlockPos::from(chunk_pos) + BlockPos::from(neighbor_pos);
+
+                            // Access the world data structure for occlusion test
+                            // Equivalent to, like, an Option::is_none_or() if it actually existed
+                            !world
+                                .get_block(world_neighbor_pos)
+                                .is_some_and(|block_data| block_data.is_some())
+                        };
+
+                        if add_face {
+                            let static_block_data = block_registry.get_block_data(block_type.id);
+
+                            mesh_builder.add_face(
+                                face,
+                                normals,
+                                uvs,
+                                offset.as_vec3() * scale as f32,
+                                scale as f32,
+                                static_block_data.atlas_coordinates,
+                                block_registry.atlas_size,
+                            );
                         }
                     }
                 }

@@ -1,15 +1,15 @@
 use bevy::{prelude::*, utils::HashMap};
 
-use super::{excavatemanufacturate_blocks, static_block_data::StaticBlockData};
+use super::{excavatemanufacturate_blocks, static_block_data::StaticBlockData, BlockId};
 
 #[derive(Resource)]
 pub struct BlockRegistry {
-    pub static_block_data: HashMap<u8, StaticBlockData>,
+    pub static_block_data: HashMap<BlockId, StaticBlockData>,
     pub atlas_size: (usize, usize),
 }
 
 impl BlockRegistry {
-    pub fn get_block_data(&self, id: u8) -> &StaticBlockData {
+    pub fn get_block_data(&self, id: BlockId) -> &StaticBlockData {
         self.static_block_data.get(&id).unwrap()
     }
 }

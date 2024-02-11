@@ -1,9 +1,11 @@
 pub mod block_ids {
+    use crate::world::block::BlockId;
+
     pub const NAMESPACE: &str = "excavatemanufacturate";
 
-    pub const GRASS: u8 = 0;
-    pub const DIRT: u8 = 1;
-    pub const BEDROCK: u8 = 2;
+    pub const GRASS: BlockId = 0;
+    pub const DIRT: BlockId = 1;
+    pub const BEDROCK: BlockId = 2;
 }
 
 pub mod block_types {

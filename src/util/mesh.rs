@@ -66,12 +66,14 @@ impl ChunkMeshBuilder {
         normals: [[f32; 3]; 4],
         mut uvs: [[f32; 2]; 4],
         offset: Vec3,
+        scale_factor: f32,
         atlas_coords: AtlasCoordinates,
         atlas_size: (usize, usize),
     ) {
         #[allow(clippy::needless_range_loop)]
         for i in 0..4 {
             for j in 0..3 {
+                face[i][j] *= scale_factor;
                 face[i][j] += offset[j];
             }
         }

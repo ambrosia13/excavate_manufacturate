@@ -83,7 +83,7 @@ pub fn spawn_chunks(
             continue;
         };
 
-        let mesh = chunk.get_mesh(&block_registry);
+        let mesh = chunk.get_mesh(chunk_pos, &block_registry, &em_world);
 
         let entity = commands
             .spawn((

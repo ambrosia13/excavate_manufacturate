@@ -12,8 +12,7 @@ pub mod render;
 pub mod render_distance;
 pub mod world_access;
 
-pub const CHUNK_SIZE: usize = 16;
-pub const CHUNK_SIZE_PADDED: usize = CHUNK_SIZE + 2;
+pub const CHUNK_SIZE: usize = 32;
 pub const CHUNK_SIZE_INT: i32 = CHUNK_SIZE as i32;
 
 pub struct ExcavateManufacturateWorldPlugin;
@@ -77,7 +76,7 @@ fn setup_light(mut commands: Commands) {
         directional_light: DirectionalLight {
             color: Color::WHITE,
             illuminance: 32000.0,
-            shadows_enabled: true,
+            shadows_enabled: false,
             ..Default::default()
         },
         cascade_shadow_config: CascadeShadowConfigBuilder {
