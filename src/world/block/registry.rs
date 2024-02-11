@@ -4,13 +4,13 @@ use super::{excavatemanufacturate_blocks, static_block_data::StaticBlockData};
 
 #[derive(Resource)]
 pub struct BlockRegistry {
-    pub static_block_data: HashMap<&'static str, StaticBlockData>,
+    pub static_block_data: HashMap<u8, StaticBlockData>,
     pub atlas_size: (usize, usize),
 }
 
 impl BlockRegistry {
-    pub fn get_block_data(&self, id: &str) -> &StaticBlockData {
-        self.static_block_data.get(id).unwrap()
+    pub fn get_block_data(&self, id: u8) -> &StaticBlockData {
+        self.static_block_data.get(&id).unwrap()
     }
 }
 

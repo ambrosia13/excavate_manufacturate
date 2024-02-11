@@ -1,9 +1,9 @@
 pub mod block_ids {
     pub const NAMESPACE: &str = "excavatemanufacturate";
 
-    pub const GRASS: &str = "excavatemanufacturate/grass";
-    pub const DIRT: &str = "excavatemanufacturate/dirt";
-    pub const BEDROCK: &str = "excavatemanufacturate/bedrock";
+    pub const GRASS: u8 = 0;
+    pub const DIRT: u8 = 1;
+    pub const BEDROCK: u8 = 2;
 }
 
 pub mod block_types {

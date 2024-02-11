@@ -116,8 +116,7 @@ impl ChunkData {
                         continue;
                     };
 
-                    let static_block_data =
-                        block_registry.static_block_data.get(block_type.id).unwrap();
+                    let static_block_data = block_registry.get_block_data(block_type.id);
 
                     for ((dx, dy, dz), face, normals, uvs) in util::mesh::NEIGHBOR_DATA {
                         let neighbor_pos = offset + IVec3::new(dx, dy, dz);
