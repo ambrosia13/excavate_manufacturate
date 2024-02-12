@@ -47,7 +47,7 @@ pub fn handle_player_movement(
     let mut transform = player_query.single_mut();
     let mut translation = transform.translation;
 
-    let movement_speed = 5.0 * time.delta_seconds();
+    let movement_speed = 7.5 * time.delta_seconds();
 
     if input.pressed(player_keybinds.up) {
         translation += Vec3::Y * movement_speed;
