@@ -1,4 +1,4 @@
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{prelude::*, tasks::AsyncComputeTaskPool, utils::HashMap};
 use crossbeam_queue::SegQueue;
 
 use crate::{

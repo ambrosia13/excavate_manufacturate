@@ -185,9 +185,22 @@ pub fn poll_generated_chunks(
             em_world.insert_chunk(chunk_pos, chunk_data);
             commands.entity(entity).despawn();
 
-            if spawned_chunks.contains_key(&chunk_pos) {
-                // If the chunk was falsely spawned before it finished generating, rebuild it.
-                spawn_queue.push(chunk_pos);
+            let chunk_positions_to_rebuild = [
+                chunk_pos,
+                chunk_pos + ChunkPos::new(1, 0, 0),
+                chunk_pos - ChunkPos::new(1, 0, 0),
+                chunk_pos + ChunkPos::new(0, 1, 0),
+                chunk_pos - ChunkPos::new(0, 1, 0),
+                chunk_pos + ChunkPos::new(0, 0, 1),
+                chunk_pos - ChunkPos::new(0, 0, 1),
+            ];
+
+            // If the chunk was falsely spawned before it finished generating, rebuild it.
+            // Also, rebuild its neighbors, because their own mesh will need to be updated based on the newly generated chunk.
+            for chunk_pos in chunk_positions_to_rebuild {
+                if spawned_chunks.contains_key(&chunk_pos) {
+                    spawn_queue.push(chunk_pos);
+                }
             }
         }
     }
