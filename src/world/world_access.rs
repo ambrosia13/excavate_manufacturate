@@ -1,10 +1,14 @@
+use std::sync::{Arc, Mutex};
+
 use bevy::{prelude::*, utils::HashMap};
 
 use crate::util::{block_pos::BlockPos, chunk_pos::ChunkPos};
 
 use super::{block::BlockData, chunk::ChunkData};
 
-#[derive(Resource)]
+#[derive(Resource, Deref, DerefMut)]
+pub struct ExcavateManufacturateWorldAccess(Arc<Mutex<ExcavateManufacturateWorld>>);
+
 pub struct ExcavateManufacturateWorld {
     chunks: HashMap<ChunkPos, ChunkData>,
 }
@@ -69,11 +73,13 @@ impl ExcavateManufacturateWorld {
 }
 
 pub fn setup_world_access(mut commands: Commands) {
-    commands.insert_resource(ExcavateManufacturateWorld::new());
+    commands.insert_resource(ExcavateManufacturateWorldAccess(Arc::new(Mutex::new(
+        ExcavateManufacturateWorld::new(),
+    ))));
     info!("Initialized world");
 }
 
 pub fn remove_world_access(mut commands: Commands) {
-    commands.remove_resource::<ExcavateManufacturateWorld>();
+    commands.remove_resource::<ExcavateManufacturateWorldAccess>();
     info!("Removed world");
 }

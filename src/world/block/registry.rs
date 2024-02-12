@@ -1,8 +1,12 @@
+use std::sync::Arc;
+
 use bevy::{prelude::*, utils::HashMap};
 
 use super::{excavatemanufacturate_blocks, static_block_data::StaticBlockData, BlockId};
 
-#[derive(Resource)]
+#[derive(Resource, Deref, DerefMut)]
+pub struct BlockRegistryAccess(Arc<BlockRegistry>);
+
 pub struct BlockRegistry {
     pub static_block_data: HashMap<BlockId, StaticBlockData>,
     pub atlas_size: (usize, usize),
@@ -51,5 +55,5 @@ pub fn setup_block_registry(mut commands: Commands, mut assets: ResMut<Assets<Im
         excavatemanufacturate_blocks::block_data::BEDROCK,
     );
 
-    commands.insert_resource(block_registry);
+    commands.insert_resource(BlockRegistryAccess(Arc::new(block_registry)));
 }

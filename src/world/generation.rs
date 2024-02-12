@@ -17,6 +17,7 @@ use super::{
     chunk::ChunkData,
     render::{ChunkSpawnQueue, SpawnedChunks},
     render_distance::RenderDistance,
+    world_access::ExcavateManufacturateWorldAccess,
 };
 use crate::world::world_access::ExcavateManufacturateWorld;
 
@@ -78,11 +79,13 @@ pub fn remove_world_generator(mut commands: Commands) {
 /// Singlethreaded chunk generation system. Currently unused, but is kept in code for comparison purposes.
 #[allow(unused)]
 pub fn generate_chunks(
-    mut em_world: ResMut<ExcavateManufacturateWorld>,
+    em_world: Res<ExcavateManufacturateWorldAccess>,
     world_generator: Res<WorldGeneratorResource>,
     render_distance: Res<RenderDistance>,
     player_transform: Query<&Transform, With<Player>>,
 ) {
+    let mut em_world = em_world.lock().unwrap();
+
     let player_translation = player_transform.single().translation;
     let player_chunk_pos = ChunkPos::from(BlockPos::from(player_translation));
 
@@ -128,12 +131,13 @@ pub struct GeneratedChunkTask(Task<(ChunkPos, ChunkData)>);
 
 pub fn generate_chunks_on_thread_pool(
     mut commands: Commands,
-    em_world: Res<ExcavateManufacturateWorld>,
+    em_world: Res<ExcavateManufacturateWorldAccess>,
     world_generator: Res<WorldGeneratorResource>,
     render_distance: Res<RenderDistance>,
     player_query: Query<&ChunkPos, With<Player>>,
     mut possibly_generated_chunks: ResMut<PossiblyGeneratedChunks>,
 ) {
+    let em_world = em_world.lock().unwrap();
     let player_chunk_pos = *player_query.single();
 
     let lower = -render_distance.chunks();
@@ -174,10 +178,12 @@ pub fn generate_chunks_on_thread_pool(
 pub fn poll_generated_chunks(
     mut commands: Commands,
     mut tasks: Query<(Entity, &mut GeneratedChunkTask)>,
-    mut em_world: ResMut<ExcavateManufacturateWorld>,
+    em_world: Res<ExcavateManufacturateWorldAccess>,
     spawned_chunks: Res<SpawnedChunks>,
     spawn_queue: Res<ChunkSpawnQueue>,
 ) {
+    let mut em_world = em_world.lock().unwrap();
+
     for (entity, mut task) in tasks.iter_mut() {
         if let Some((chunk_pos, chunk_data)) =
             bevy::tasks::block_on(futures_lite::future::poll_once(&mut task.0))

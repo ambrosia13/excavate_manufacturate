@@ -1,4 +1,10 @@
-use bevy::{prelude::*, tasks::AsyncComputeTaskPool, utils::HashMap};
+use std::sync::Arc;
+
+use bevy::{
+    prelude::*,
+    tasks::{AsyncComputeTaskPool, Task},
+    utils::{HashMap, HashSet},
+};
 use crossbeam_queue::SegQueue;
 
 use crate::{
@@ -10,14 +16,17 @@ use crate::{
 };
 
 use super::{
-    block::registry::{BlockRegistry, TextureAtlasHandle},
+    block::registry::{BlockRegistry, BlockRegistryAccess, TextureAtlasHandle},
     render_distance::RenderDistance,
-    world_access::ExcavateManufacturateWorld,
+    world_access::{ExcavateManufacturateWorld, ExcavateManufacturateWorldAccess},
 };
 
 /// The currently spawned chunks.
 #[derive(Resource, Deref, DerefMut)]
 pub struct SpawnedChunks(HashMap<ChunkPos, Entity>);
+
+#[derive(Resource, Deref, DerefMut)]
+pub struct PossiblySpawnedChunks(HashSet<ChunkPos>);
 
 /// Handles to chunks whose meshes have already been created.
 #[derive(Resource, Deref, DerefMut)]
@@ -28,6 +37,7 @@ pub struct ChunkSpawnQueue(SegQueue<ChunkPos>);
 
 pub fn setup_chunk_spawning_structures(mut commands: Commands) {
     commands.insert_resource(SpawnedChunks(HashMap::new()));
+    commands.insert_resource(PossiblySpawnedChunks(HashSet::new()));
     commands.insert_resource(ChunkMeshes(HashMap::new()));
     commands.insert_resource(ChunkSpawnQueue(SegQueue::new()));
 
@@ -36,6 +46,7 @@ pub fn setup_chunk_spawning_structures(mut commands: Commands) {
 
 pub fn remove_chunk_spawning_structures(mut commands: Commands) {
     commands.remove_resource::<SpawnedChunks>();
+    commands.remove_resource::<PossiblySpawnedChunks>();
     commands.remove_resource::<ChunkMeshes>();
     commands.remove_resource::<ChunkSpawnQueue>();
 
@@ -47,6 +58,7 @@ pub fn populate_chunk_spawn_queue(
     chunk_spawn_queue: Res<ChunkSpawnQueue>,
     render_distance: Res<RenderDistance>,
     spawned_chunks: Res<SpawnedChunks>,
+    possibly_spawned_chunks: Res<PossiblySpawnedChunks>,
 ) {
     let player_chunk_pos = *player_query.single();
 
@@ -58,7 +70,9 @@ pub fn populate_chunk_spawn_queue(
             for z_offset in lower..=upper {
                 let chunk_pos = player_chunk_pos + ChunkPos::new(x_offset, y_offset, z_offset);
 
-                if !spawned_chunks.contains_key(&chunk_pos) {
+                if !spawned_chunks.contains_key(&chunk_pos)
+                    && !possibly_spawned_chunks.contains(&chunk_pos)
+                {
                     chunk_spawn_queue.push(chunk_pos);
                 }
             }
@@ -66,45 +80,117 @@ pub fn populate_chunk_spawn_queue(
     }
 }
 
+#[derive(Component)]
+pub struct SpawnedChunkTask(Task<(ChunkPos, Option<Mesh>)>);
+
 #[allow(clippy::too_many_arguments)]
 pub fn spawn_chunks(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut spawned_chunks: ResMut<SpawnedChunks>,
-    em_world: Res<ExcavateManufacturateWorld>,
+    mut possibly_spawned_chunks: ResMut<PossiblySpawnedChunks>,
+    em_world: Res<ExcavateManufacturateWorldAccess>,
     chunk_spawn_queue: Res<ChunkSpawnQueue>,
-    block_registry: Res<BlockRegistry>,
+    block_registry: Res<BlockRegistryAccess>,
     texture_atlas_handle: Res<TextureAtlasHandle>,
 ) {
+    let thread_pool = AsyncComputeTaskPool::get();
+
     while let Some(chunk_pos) = chunk_spawn_queue.pop() {
-        let Some(chunk) = em_world.get_chunk(chunk_pos) else {
-            // We can't spawn an empty chunk
-            continue;
-        };
+        let em_world = Arc::clone(&em_world);
+        let block_registry = Arc::clone(&block_registry);
 
-        let mesh = chunk.get_mesh(chunk_pos, &block_registry, &em_world);
+        let task = thread_pool.spawn(async move {
+            let em_world = em_world.lock().unwrap();
 
-        let entity = commands
-            .spawn((
-                MaterialMeshBundle {
-                    mesh: meshes.add(mesh),
-                    material: materials.add(StandardMaterial {
-                        base_color: Color::WHITE,
-                        base_color_texture: Some(texture_atlas_handle.clone_weak()),
+            let Some(chunk) = em_world.get_chunk(chunk_pos) else {
+                // We can't spawn an empty chunk
+                return (chunk_pos, None);
+            };
+
+            let mesh = chunk.get_mesh(chunk_pos, &block_registry, &em_world);
+            (chunk_pos, Some(mesh))
+        });
+
+        commands.spawn(SpawnedChunkTask(task));
+        possibly_spawned_chunks.insert(chunk_pos);
+
+        // let Some(chunk) = em_world.get_chunk(chunk_pos) else {
+        //     // We can't spawn an empty chunk
+        //     continue;
+        // };
+
+        // let mesh = chunk.get_mesh(chunk_pos, &block_registry, &em_world);
+
+        // let entity = commands
+        //     .spawn((
+        //         MaterialMeshBundle {
+        //             mesh: meshes.add(mesh),
+        //             material: materials.add(StandardMaterial {
+        //                 base_color: Color::WHITE,
+        //                 base_color_texture: Some(texture_atlas_handle.clone_weak()),
+        //                 ..Default::default()
+        //             }),
+        //             transform: Transform::from_translation(
+        //                 BlockPos::from(chunk_pos).as_vec3() - 1.0,
+        //             ),
+        //             ..Default::default()
+        //         },
+        //         chunk_pos,
+        //     ))
+        //     .id();
+
+        // if let Some(old_chunk) = spawned_chunks.insert(chunk_pos, entity) {
+        //     commands.entity(old_chunk).despawn();
+        // }
+    }
+}
+
+pub fn poll_spawned_chunks(
+    mut commands: Commands,
+    mut tasks: Query<(Entity, &mut SpawnedChunkTask)>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    texture_atlas_handle: Res<TextureAtlasHandle>,
+    mut spawned_chunks: ResMut<SpawnedChunks>,
+    mut possibly_spawned_chunks: ResMut<PossiblySpawnedChunks>,
+) {
+    for (task_entity, mut task) in tasks.iter_mut() {
+        if let Some((chunk_pos, chunk_mesh)) =
+            bevy::tasks::block_on(futures_lite::future::poll_once(&mut task.0))
+        {
+            let Some(mesh) = chunk_mesh else {
+                continue;
+            };
+
+            let entity = commands
+                .spawn((
+                    MaterialMeshBundle {
+                        mesh: meshes.add(mesh),
+                        material: materials.add(StandardMaterial {
+                            base_color: Color::WHITE,
+                            base_color_texture: Some(texture_atlas_handle.clone_weak()),
+                            ..Default::default()
+                        }),
+                        transform: Transform::from_translation(
+                            BlockPos::from(chunk_pos).as_vec3() - 1.0,
+                        ),
                         ..Default::default()
-                    }),
-                    transform: Transform::from_translation(
-                        BlockPos::from(chunk_pos).as_vec3() - 1.0,
-                    ),
-                    ..Default::default()
-                },
-                chunk_pos,
-            ))
-            .id();
+                    },
+                    chunk_pos,
+                ))
+                .id();
 
-        if let Some(old_chunk) = spawned_chunks.insert(chunk_pos, entity) {
-            commands.entity(old_chunk).despawn();
+            if let Some(old_chunk) = spawned_chunks.insert(chunk_pos, entity) {
+                commands.entity(old_chunk).despawn();
+            }
+
+            // Since the chunk finished generating, it's no longer possibly generated,
+            // it is definitely generated and belongs in the other data structure
+            possibly_spawned_chunks.remove(&chunk_pos);
+
+            commands.entity(task_entity).despawn();
         }
     }
 }
@@ -115,6 +201,7 @@ pub fn despawn_chunks(
     player_query: Query<&ChunkPos, With<Player>>,
     render_distance: Res<RenderDistance>,
     mut spawned_chunks: ResMut<SpawnedChunks>,
+    mut possibly_spawned_chunks: ResMut<PossiblySpawnedChunks>,
 ) {
     let player_chunk_pos = *player_query.single();
 
@@ -125,6 +212,8 @@ pub fn despawn_chunks(
             if let Some(entity) = spawned_chunks.remove(&chunk_pos) {
                 commands.entity(entity).despawn();
             }
+
+            possibly_spawned_chunks.remove(&chunk_pos);
         }
     }
 }

@@ -45,7 +45,11 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
                     generation::generate_chunks_on_thread_pool,
                 ),
                 render::populate_chunk_spawn_queue,
-                render::spawn_chunks,
+                (
+                    // Multithreaded chunk meshing
+                    render::spawn_chunks,
+                    render::poll_spawned_chunks,
+                ),
                 render::despawn_chunks,
             )
                 .run_if(in_state(GameState::InGame)),

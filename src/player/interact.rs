@@ -3,9 +3,13 @@ use bevy::prelude::*;
 use crate::{
     util::{self, block_pos::BlockPos, chunk_pos::ChunkPos, raytrace::Hit},
     world::{
-        block::{registry::BlockRegistry, static_block_data::BlockHardnessLevel, BlockData},
+        block::{
+            registry::{BlockRegistry, BlockRegistryAccess},
+            static_block_data::BlockHardnessLevel,
+            BlockData,
+        },
         render::ChunkSpawnQueue,
-        world_access::ExcavateManufacturateWorld,
+        world_access::ExcavateManufacturateWorldAccess,
     },
 };
 
@@ -14,12 +18,13 @@ use super::Player;
 pub fn destroy_block(
     player_transform: Query<&Transform, With<Player>>,
     input: Res<Input<KeyCode>>,
-    mut ev_world: ResMut<ExcavateManufacturateWorld>,
+    ev_world: Res<ExcavateManufacturateWorldAccess>,
     chunk_spawn_queue: Res<ChunkSpawnQueue>,
     mut gizmos: Gizmos,
-    block_registry: Res<BlockRegistry>,
+    block_registry: Res<BlockRegistryAccess>,
 ) {
     let player_transform = player_transform.single();
+    let mut ev_world = ev_world.lock().unwrap();
 
     if let Some(Hit { position, normal }) = util::raytrace::raytrace_dda(
         player_transform.translation.into(),
