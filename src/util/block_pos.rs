@@ -26,6 +26,37 @@ impl BlockPos {
         self.cmpeq(IVec3::splat(0)).any() || self.cmpeq(IVec3::splat(CHUNK_SIZE_INT - 1)).any()
     }
 
+    pub fn get_touched_chunk_positions(self) -> Vec<ChunkPos> {
+        let chunk_pos = ChunkPos::from(self);
+
+        let mut chunk_positions = Vec::with_capacity(7);
+        chunk_positions.push(chunk_pos);
+
+        let on_chunk_borders_neg = self.cmpeq(IVec3::splat(0));
+        let on_chunk_borders_pos = self.cmpeq(IVec3::splat(CHUNK_SIZE_INT - 1));
+
+        if on_chunk_borders_pos.x {
+            chunk_positions.push(chunk_pos + ChunkPos::new(1, 0, 0));
+        }
+        if on_chunk_borders_neg.x {
+            chunk_positions.push(chunk_pos - ChunkPos::new(1, 0, 0));
+        }
+        if on_chunk_borders_pos.y {
+            chunk_positions.push(chunk_pos + ChunkPos::new(0, 1, 0));
+        }
+        if on_chunk_borders_neg.y {
+            chunk_positions.push(chunk_pos - ChunkPos::new(0, 1, 0));
+        }
+        if on_chunk_borders_pos.z {
+            chunk_positions.push(chunk_pos + ChunkPos::new(0, 0, 1));
+        }
+        if on_chunk_borders_neg.z {
+            chunk_positions.push(chunk_pos - ChunkPos::new(0, 0, 1));
+        }
+
+        chunk_positions
+    }
+
     pub fn inner(&self) -> IVec3 {
         self.0
     }

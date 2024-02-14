@@ -1,5 +1,4 @@
 use bevy::{prelude::*, utils::HashMap};
-use bevy_rapier3d::geometry::Collider;
 use crossbeam_queue::SegQueue;
 
 use crate::{
@@ -14,7 +13,6 @@ use super::{
     block::registry::{BlockRegistry, TextureAtlasHandle},
     render_distance::RenderDistance,
     world_access::ExcavateManufacturateWorld,
-    CHUNK_SIZE_INT,
 };
 
 /// The currently spawned chunks.
@@ -30,27 +28,10 @@ pub struct ChunkSpawnQueue(SegQueue<ChunkPos>);
 
 impl ChunkSpawnQueue {
     pub fn submit_on_block_update(&self, block_pos: BlockPos) {
-        let pos = block_pos.inner();
-        let chunk_pos = ChunkPos::from(block_pos);
-
-        // True if the block being broken or placed on a chunk boundary, this means surrounding chunks need to be rebuilt.
-        let block_on_chunk_boundary = block_pos.is_on_chunk_border();
-
-        if block_on_chunk_boundary {
-            [
-                chunk_pos,
-                chunk_pos + ChunkPos::new(1, 0, 0),
-                chunk_pos - ChunkPos::new(1, 0, 0),
-                chunk_pos + ChunkPos::new(0, 1, 0),
-                chunk_pos - ChunkPos::new(0, 1, 0),
-                chunk_pos + ChunkPos::new(0, 0, 1),
-                chunk_pos - ChunkPos::new(0, 0, 1),
-            ]
+        block_pos
+            .get_touched_chunk_positions()
             .into_iter()
             .for_each(|pos| self.push(pos));
-        } else {
-            self.push(chunk_pos);
-        }
     }
 }
 
@@ -101,7 +82,6 @@ pub fn spawn_chunks(
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut spawned_chunks: ResMut<SpawnedChunks>,
     mut chunk_meshes: ResMut<ChunkMeshes>,
-    player_query: Query<&ChunkPos, With<Player>>,
     em_world: Res<ExcavateManufacturateWorld>,
     chunk_spawn_queue: Res<ChunkSpawnQueue>,
     block_registry: Res<BlockRegistry>,
@@ -122,15 +102,6 @@ pub fn spawn_chunks(
         let mesh_handle = meshes.add(mesh);
 
         chunk_meshes.insert(chunk_pos, mesh_handle.clone_weak());
-
-        // let collider = if chunk_pos == player_chunk_pos {
-        //     Collider::from_bevy_mesh(
-        //         &mesh,
-        //         &bevy_rapier3d::geometry::ComputedColliderShape::TriMesh,
-        //     )
-        // } else {
-        //     None
-        // };
 
         let entity = commands
             .spawn((

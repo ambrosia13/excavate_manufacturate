@@ -6,43 +6,18 @@ use crate::{
     util::{block_pos::BlockPos, chunk_pos::ChunkPos},
 };
 
-use super::{
-    render::{ChunkMeshes, SpawnedChunks},
-    CHUNK_SIZE_INT,
-};
+use super::render::{ChunkMeshes, SpawnedChunks};
 
 pub fn insert_collider_on_player_chunk_pos(
     mut commands: Commands,
-    player_query: Query<(&ChunkPos, &BlockPos), With<Player>>,
+    player_query: Query<&BlockPos, With<Player>>,
     spawned_chunks: Res<SpawnedChunks>,
     chunk_meshes: Res<ChunkMeshes>,
     meshes: Res<Assets<Mesh>>,
 ) {
-    let (&player_chunk_pos, &player_block_pos) = player_query.single();
+    let player_block_pos = *player_query.single();
 
-    let mut chunk_positions = vec![player_chunk_pos];
-
-    let on_chunk_borders_neg = player_block_pos.cmpeq(IVec3::splat(0));
-    let on_chunk_borders_pos = player_block_pos.cmpeq(IVec3::splat(CHUNK_SIZE_INT - 1));
-
-    if on_chunk_borders_pos.x {
-        chunk_positions.push(player_chunk_pos + ChunkPos::new(1, 0, 0));
-    }
-    if on_chunk_borders_neg.x {
-        chunk_positions.push(player_chunk_pos - ChunkPos::new(1, 0, 0));
-    }
-    if on_chunk_borders_pos.y {
-        chunk_positions.push(player_chunk_pos + ChunkPos::new(0, 1, 0));
-    }
-    if on_chunk_borders_neg.y {
-        chunk_positions.push(player_chunk_pos - ChunkPos::new(0, 1, 0));
-    }
-    if on_chunk_borders_pos.z {
-        chunk_positions.push(player_chunk_pos + ChunkPos::new(0, 0, 1));
-    }
-    if on_chunk_borders_neg.z {
-        chunk_positions.push(player_chunk_pos - ChunkPos::new(0, 0, 1));
-    }
+    let chunk_positions = player_block_pos.get_touched_chunk_positions();
 
     for chunk_pos in chunk_positions {
         if let Some(collider) = chunk_meshes
@@ -73,34 +48,12 @@ pub fn insert_collider_on_player_chunk_pos(
 
 pub fn remove_collider_on_faraway_chunks(
     mut commands: Commands,
-    player_query: Query<(&ChunkPos, &BlockPos), With<Player>>,
+    player_query: Query<&BlockPos, With<Player>>,
     query: Query<(Entity, &ChunkPos), With<Collider>>,
 ) {
-    let (&player_chunk_pos, &player_block_pos) = player_query.single();
+    let player_block_pos = *player_query.single();
 
-    let mut allowed_positions = vec![player_chunk_pos];
-
-    let on_chunk_borders_neg = player_block_pos.cmpeq(IVec3::splat(0));
-    let on_chunk_borders_pos = player_block_pos.cmpeq(IVec3::splat(CHUNK_SIZE_INT - 1));
-
-    if on_chunk_borders_pos.x {
-        allowed_positions.push(player_chunk_pos + ChunkPos::new(1, 0, 0));
-    }
-    if on_chunk_borders_neg.x {
-        allowed_positions.push(player_chunk_pos - ChunkPos::new(1, 0, 0));
-    }
-    if on_chunk_borders_pos.y {
-        allowed_positions.push(player_chunk_pos + ChunkPos::new(0, 1, 0));
-    }
-    if on_chunk_borders_neg.y {
-        allowed_positions.push(player_chunk_pos - ChunkPos::new(0, 1, 0));
-    }
-    if on_chunk_borders_pos.z {
-        allowed_positions.push(player_chunk_pos + ChunkPos::new(0, 0, 1));
-    }
-    if on_chunk_borders_neg.z {
-        allowed_positions.push(player_chunk_pos - ChunkPos::new(0, 0, 1));
-    }
+    let allowed_positions = player_block_pos.get_touched_chunk_positions();
 
     for (entity, &chunk_pos) in query.iter() {
         if !allowed_positions.contains(&chunk_pos) {
