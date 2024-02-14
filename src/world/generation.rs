@@ -45,18 +45,26 @@ pub fn setup_world_generator(mut commands: Commands) {
                 std::cmp::Ordering::Greater => {
                     let position = block_pos.as_vec3();
 
+                    let hills_multiplier =
+                        noisy_bevy::simplex_noise_2d(position.xz() * 0.005 + 10000.0) * 0.5 + 0.5;
+
                     let hills_generator = |position: Vec3| {
-                        position.y + 10.0 * noisy_bevy::simplex_noise_2d(position.xz() * 0.025)
-                            < 20.0
+                        position.y
+                            + hills_multiplier
+                                * 20.0
+                                * noisy_bevy::simplex_noise_2d(position.xz() * 0.025)
                     };
 
-                    if hills_generator(position) {
-                        if hills_generator(position + Vec3::Y) {
-                            // Grass is above this block
-                            BlockData::Some(DIRT)
-                        } else {
-                            BlockData::Some(GRASS)
-                        }
+                    let noise = hills_generator(position);
+
+                    let base_ground_level = 30.0;
+
+                    if noise < base_ground_level - 10.0 {
+                        BlockData::Some(STONE)
+                    } else if noise < base_ground_level - 1.0 {
+                        BlockData::Some(DIRT)
+                    } else if noise < base_ground_level {
+                        BlockData::Some(GRASS)
                     } else {
                         BlockData::None
                     }
@@ -103,6 +111,13 @@ pub fn generate_chunks(
                     let block_pos = block_pos + BlockPos::from(chunk_pos);
                     world_generator.generate_terrain_noise(block_pos)
                 });
+
+                // Note: because PossiblyGeneratedChunks is not used, this will cause lag because
+                // the game is trying to generate the same chunks over and over
+                if chunk_data.is_empty() {
+                    drop(chunk_data);
+                    continue;
+                }
 
                 em_world.insert_chunk(chunk_pos, chunk_data);
             }
@@ -182,6 +197,14 @@ pub fn poll_generated_chunks(
         if let Some((chunk_pos, chunk_data)) =
             bevy::tasks::block_on(futures_lite::future::poll_once(&mut task.0))
         {
+            if chunk_data.is_empty() {
+                // Don't bother doing operations for an empty chunk, end this task.
+                drop(chunk_data);
+                commands.entity(entity).despawn();
+
+                continue;
+            }
+
             em_world.insert_chunk(chunk_pos, chunk_data);
             commands.entity(entity).despawn();
 
@@ -204,4 +227,18 @@ pub fn poll_generated_chunks(
             }
         }
     }
+}
+
+pub fn debug_num_chunks_in_world(
+    input: Res<Input<KeyCode>>,
+    em_world: Res<ExcavateManufacturateWorld>,
+) {
+    if !input.just_pressed(KeyCode::Backslash) {
+        return;
+    }
+
+    info!(
+        "Number of chunks stored in the world: {}",
+        em_world.total_chunk_count()
+    );
 }

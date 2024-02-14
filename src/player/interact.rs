@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    util::{self, block_pos::BlockPos, chunk_pos::ChunkPos, raytrace::Hit},
+    util::{self, block_pos::BlockPos, raytrace::Hit},
     world::{
         block::{registry::BlockRegistry, static_block_data::BlockHardnessLevel, BlockData},
         render::ChunkSpawnQueue,
@@ -9,12 +9,13 @@ use crate::{
     },
 };
 
-use super::Player;
+use super::{keybinds::PlayerKeybinds, Player};
 
 pub fn destroy_block(
     player_transform: Query<&Transform, With<Player>>,
-    input: Res<Input<KeyCode>>,
-    mut ev_world: ResMut<ExcavateManufacturateWorld>,
+    input: Res<Input<MouseButton>>,
+    keybinds: Res<PlayerKeybinds>,
+    mut em_world: ResMut<ExcavateManufacturateWorld>,
     chunk_spawn_queue: Res<ChunkSpawnQueue>,
     mut gizmos: Gizmos,
     block_registry: Res<BlockRegistry>,
@@ -25,12 +26,7 @@ pub fn destroy_block(
         player_transform.translation.into(),
         (player_transform.forward()).into(),
         30,
-        |pos| {
-            let block_pos = BlockPos::from(pos);
-            ev_world
-                .get_block(block_pos)
-                .is_some_and(|block_data| block_data.is_some())
-        },
+        em_world.hit_evaluator(),
     ) {
         // Offset the position by the negative normal to avoid error
         let mut block_pos = BlockPos::from((position - 0.1 * normal).as_ivec3());
@@ -47,7 +43,7 @@ pub fn destroy_block(
 
         gizmos.sphere(Vec3::from(position), Quat::IDENTITY, 0.25, Color::WHITE);
 
-        let block_data = ev_world.get_block(block_pos);
+        let block_data = em_world.get_block(block_pos);
 
         let block_can_be_destroyed = block_data.is_some_and(|block_data| {
             block_data.as_ref().is_some_and(|block_type| {
@@ -57,10 +53,10 @@ pub fn destroy_block(
         });
 
         if block_can_be_destroyed
-            && input.just_pressed(KeyCode::B)
-            && ev_world.set_block(block_pos, BlockData::None)
+            && input.just_pressed(keybinds.break_block)
+            && em_world.set_block(block_pos, BlockData::None)
         {
-            chunk_spawn_queue.push(ChunkPos::from(block_pos));
+            chunk_spawn_queue.submit_on_block_update(block_pos);
             info!(
                 "Successfully removed block at {:?}. Player position is {:?}",
                 block_pos,

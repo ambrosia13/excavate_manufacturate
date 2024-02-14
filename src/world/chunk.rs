@@ -9,6 +9,12 @@ use bevy::prelude::*;
 
 pub struct ChunkData {
     blocks: Vec<BlockData>,
+
+    /// Isn't truly whether the chunk is empty. This just tells whether or not a chunk has no blocks in it. If the chunk
+    /// gets a block in it, and then all blocks are destroyed, this will still be false. It only updates the first time
+    /// the chunk gets data.
+    is_empty: bool,
+
     scale: i32,
 }
 
@@ -18,35 +24,42 @@ impl ChunkData {
 
         Self {
             blocks: vec![BlockData::None; chunk_size * chunk_size * chunk_size],
+            is_empty: true,
             scale,
         }
     }
 
     pub fn with_data<F: FnMut(BlockPos) -> BlockData>(scale: i32, mut supplier: F) -> Self {
         let chunk_size = Self::get_scaled_chunk_size(scale);
+        let mut is_empty = true;
+
+        let blocks = (0..(chunk_size * chunk_size * chunk_size))
+            .map(|i| {
+                let data = supplier(BlockPos::from(Self::deindexify(i, scale) * scale));
+
+                match data {
+                    Some(block_type) => {
+                        is_empty = false;
+                        Some(block_type)
+                    }
+                    None => None,
+                }
+            })
+            .collect();
 
         Self {
-            blocks: (0..(chunk_size * chunk_size * chunk_size))
-                .map(|i| supplier(BlockPos::from(Self::deindexify(i, scale) * scale)))
-                .collect(),
+            blocks,
+            is_empty,
             scale,
         }
     }
 
-    pub fn get_scaled_chunk_size(scale: i32) -> usize {
-        CHUNK_SIZE / scale as usize
+    pub fn is_empty(&self) -> bool {
+        self.is_empty
     }
 
-    pub fn for_each_mut<F: FnMut(BlockPos, &mut BlockData)>(&mut self, mut f: F) {
-        self.blocks
-            .iter_mut()
-            .enumerate()
-            .for_each(|(index, block_data)| {
-                let offset = Self::deindexify(index, self.scale);
-                let block_pos = BlockPos::from(offset * self.scale);
-
-                f(block_pos, block_data);
-            });
+    pub fn get_scaled_chunk_size(scale: i32) -> usize {
+        CHUNK_SIZE / scale as usize
     }
 
     pub fn get_raw_array(&self) -> &[BlockData] {
@@ -76,17 +89,11 @@ impl ChunkData {
         &self.blocks[Self::indexify(offset, self.scale)]
     }
 
-    pub fn get_mut(&mut self, block_pos: BlockPos) -> &mut BlockData {
-        let offset = block_pos.as_chunk_offset().inner() / self.scale;
-        &mut self.blocks[Self::indexify(offset, self.scale)]
-    }
-
-    pub fn try_get(&self, block_pos: BlockPos) -> Option<&BlockData> {
-        let offset = block_pos.as_chunk_offset().inner() / self.scale;
-        self.blocks.get(Self::indexify(offset, self.scale))
-    }
-
     pub fn set(&mut self, block_pos: BlockPos, block: BlockData) {
+        if block.is_some() {
+            self.is_empty = false;
+        }
+
         let offset = block_pos.as_chunk_offset().inner() / self.scale;
         self.blocks[Self::indexify(offset, self.scale)] = block;
     }
@@ -97,10 +104,6 @@ impl ChunkData {
 
     pub fn try_get_from_raw_offset(&self, offset: IVec3) -> Option<&BlockData> {
         self.blocks.get(Self::indexify(offset, self.scale))
-    }
-
-    pub fn set_from_raw_offset(&mut self, offset: IVec3, block: BlockData) {
-        self.blocks[Self::indexify(offset, self.scale)] = block;
     }
 
     pub fn get_mesh(

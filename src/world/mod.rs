@@ -7,6 +7,7 @@ use crate::state::GameState;
 
 pub mod block;
 pub mod chunk;
+pub mod collider;
 pub mod generation;
 pub mod render;
 pub mod render_distance;
@@ -44,9 +45,13 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
                     generation::poll_generated_chunks,
                     generation::generate_chunks_on_thread_pool,
                 ),
+                // generation::generate_chunks,
                 render::populate_chunk_spawn_queue,
                 render::spawn_chunks,
                 render::despawn_chunks,
+                collider::insert_collider_on_player_chunk_pos,
+                collider::remove_collider_on_faraway_chunks,
+                generation::debug_num_chunks_in_world,
             )
                 .run_if(in_state(GameState::InGame)),
         )

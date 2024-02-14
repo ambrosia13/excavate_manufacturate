@@ -10,7 +10,9 @@ pub struct BlockRegistry {
 
 impl BlockRegistry {
     pub fn get_block_data(&self, id: BlockId) -> &StaticBlockData {
-        self.static_block_data.get(&id).unwrap()
+        self.static_block_data
+            .get(&id)
+            .unwrap_or_else(|| panic!("Block id {:?} doesn't exist in the block registry", id))
     }
 }
 
@@ -23,7 +25,8 @@ pub fn setup_block_registry(mut commands: Commands, mut assets: ResMut<Assets<Im
     assets_directory.push("excavatemanufacturate");
     assets_directory.push("textures");
 
-    let atlas_dynamic_image = image::open(assets_directory.join("atlas.png")).unwrap();
+    let atlas_dynamic_image =
+        image::open(assets_directory.join("atlas.png")).expect("Couldn't load texture atlas image");
 
     let atlas_size = (
         atlas_dynamic_image.width() as usize,
@@ -49,6 +52,10 @@ pub fn setup_block_registry(mut commands: Commands, mut assets: ResMut<Assets<Im
     block_registry.static_block_data.insert(
         excavatemanufacturate_blocks::block_ids::BEDROCK,
         excavatemanufacturate_blocks::block_data::BEDROCK,
+    );
+    block_registry.static_block_data.insert(
+        excavatemanufacturate_blocks::block_ids::STONE,
+        excavatemanufacturate_blocks::block_data::STONE,
     );
 
     commands.insert_resource(block_registry);

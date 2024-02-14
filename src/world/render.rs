@@ -1,4 +1,5 @@
-use bevy::{prelude::*, tasks::AsyncComputeTaskPool, utils::HashMap};
+use bevy::{prelude::*, utils::HashMap};
+use bevy_rapier3d::geometry::Collider;
 use crossbeam_queue::SegQueue;
 
 use crate::{
@@ -13,6 +14,7 @@ use super::{
     block::registry::{BlockRegistry, TextureAtlasHandle},
     render_distance::RenderDistance,
     world_access::ExcavateManufacturateWorld,
+    CHUNK_SIZE_INT,
 };
 
 /// The currently spawned chunks.
@@ -25,6 +27,32 @@ pub struct ChunkMeshes(HashMap<ChunkPos, Handle<Mesh>>);
 
 #[derive(Resource, Deref, DerefMut)]
 pub struct ChunkSpawnQueue(SegQueue<ChunkPos>);
+
+impl ChunkSpawnQueue {
+    pub fn submit_on_block_update(&self, block_pos: BlockPos) {
+        let pos = block_pos.inner();
+        let chunk_pos = ChunkPos::from(block_pos);
+
+        // True if the block being broken or placed on a chunk boundary, this means surrounding chunks need to be rebuilt.
+        let block_on_chunk_boundary = block_pos.is_on_chunk_border();
+
+        if block_on_chunk_boundary {
+            [
+                chunk_pos,
+                chunk_pos + ChunkPos::new(1, 0, 0),
+                chunk_pos - ChunkPos::new(1, 0, 0),
+                chunk_pos + ChunkPos::new(0, 1, 0),
+                chunk_pos - ChunkPos::new(0, 1, 0),
+                chunk_pos + ChunkPos::new(0, 0, 1),
+                chunk_pos - ChunkPos::new(0, 0, 1),
+            ]
+            .into_iter()
+            .for_each(|pos| self.push(pos));
+        } else {
+            self.push(chunk_pos);
+        }
+    }
+}
 
 pub fn setup_chunk_spawning_structures(mut commands: Commands) {
     commands.insert_resource(SpawnedChunks(HashMap::new()));
@@ -72,6 +100,8 @@ pub fn spawn_chunks(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut spawned_chunks: ResMut<SpawnedChunks>,
+    mut chunk_meshes: ResMut<ChunkMeshes>,
+    player_query: Query<&ChunkPos, With<Player>>,
     em_world: Res<ExcavateManufacturateWorld>,
     chunk_spawn_queue: Res<ChunkSpawnQueue>,
     block_registry: Res<BlockRegistry>,
@@ -79,16 +109,33 @@ pub fn spawn_chunks(
 ) {
     while let Some(chunk_pos) = chunk_spawn_queue.pop() {
         let Some(chunk) = em_world.get_chunk(chunk_pos) else {
-            // We can't spawn an empty chunk
+            // The chunk doesn't exist in the world for some reason
             continue;
         };
 
+        if chunk.is_empty() {
+            // Don't spawn a chunk with no data in it
+            continue;
+        }
+
         let mesh = chunk.get_mesh(chunk_pos, &block_registry, &em_world);
+        let mesh_handle = meshes.add(mesh);
+
+        chunk_meshes.insert(chunk_pos, mesh_handle.clone_weak());
+
+        // let collider = if chunk_pos == player_chunk_pos {
+        //     Collider::from_bevy_mesh(
+        //         &mesh,
+        //         &bevy_rapier3d::geometry::ComputedColliderShape::TriMesh,
+        //     )
+        // } else {
+        //     None
+        // };
 
         let entity = commands
             .spawn((
                 MaterialMeshBundle {
-                    mesh: meshes.add(mesh),
+                    mesh: mesh_handle,
                     material: materials.add(StandardMaterial {
                         base_color: Color::WHITE,
                         base_color_texture: Some(texture_atlas_handle.clone_weak()),

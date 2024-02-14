@@ -1,78 +1,51 @@
 use bevy::{input::mouse::MouseMotion, prelude::*, window::PrimaryWindow};
+use bevy_rapier3d::control::{KinematicCharacterController, KinematicCharacterControllerOutput};
 
-use super::Player;
-
-#[derive(Resource)]
-pub struct PlayerKeybinds {
-    pub forward: KeyCode,
-    pub back: KeyCode,
-
-    pub left: KeyCode,
-    pub right: KeyCode,
-
-    pub up: KeyCode,
-    pub down: KeyCode,
-
-    pub break_block: MouseButton,
-    pub place_block: MouseButton,
-}
-
-impl Default for PlayerKeybinds {
-    fn default() -> Self {
-        use KeyCode::*;
-
-        Self {
-            forward: W,
-            back: S,
-            left: A,
-            right: D,
-            up: Space,
-            down: ShiftLeft,
-            break_block: MouseButton::Left,
-            place_block: MouseButton::Right,
-        }
-    }
-}
-
-pub fn setup_player_keybinds(mut commands: Commands) {
-    commands.init_resource::<PlayerKeybinds>();
-}
+use super::{keybinds::PlayerKeybinds, Player, PlayerGravity, PlayerPhysics};
 
 pub fn handle_player_movement(
-    mut player_query: Query<&mut Transform, With<Player>>,
+    player_query: Query<&Transform, With<Player>>,
+    mut player_physics_query: Query<&mut KinematicCharacterController, With<PlayerPhysics>>,
     player_keybinds: Res<PlayerKeybinds>,
     input: Res<Input<KeyCode>>,
     time: Res<Time>,
 ) {
-    let mut transform = player_query.single_mut();
-    let mut translation = transform.translation;
-
-    let movement_speed = 7.5 * time.delta_seconds();
-
-    if input.pressed(player_keybinds.up) {
-        translation += Vec3::Y * movement_speed;
-    }
-    if input.pressed(player_keybinds.down) {
-        translation -= Vec3::Y * movement_speed;
-    }
-    if input.pressed(player_keybinds.left) {
-        translation += transform.left() * movement_speed;
-    }
-    if input.pressed(player_keybinds.right) {
-        translation += transform.right() * movement_speed;
-    }
+    let transform = player_query.single();
+    let mut controller = player_physics_query.single_mut();
 
     let forward = transform.forward();
-    let forward = Vec3::new(forward.x, 0.0, forward.z).normalize();
+    let forward = Vec3::new(forward.x, 0.0, forward.z).normalize_or_zero();
 
+    let movement_speed = 7.5 * time.delta_seconds();
+    let mut player_movement = Vec3::ZERO;
+
+    if input.pressed(player_keybinds.up) {
+        player_movement += Vec3::Y;
+    }
+    if input.pressed(player_keybinds.down) {
+        player_movement -= Vec3::Y;
+    }
+    if input.pressed(player_keybinds.left) {
+        player_movement += transform.left();
+    }
+    if input.pressed(player_keybinds.right) {
+        player_movement += transform.right();
+    }
     if input.pressed(player_keybinds.forward) {
-        translation += forward * movement_speed;
+        player_movement += forward;
     }
     if input.pressed(player_keybinds.back) {
-        translation -= forward * movement_speed;
+        player_movement -= forward;
     }
 
-    transform.translation = translation;
+    // If the player movement isn't zero, that means we moved
+    if let Some(player_movement) = player_movement.try_normalize() {
+        controller.translation = if let Some(translation) = controller.translation {
+            Some(player_movement * movement_speed + translation)
+        } else {
+            Some(player_movement * movement_speed)
+        };
+    }
 }
 
 pub fn handle_player_rotation(
@@ -98,4 +71,59 @@ pub fn handle_player_rotation(
 
     transform.rotation =
         Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
+}
+
+pub fn update_player_gravity(
+    mut physics_query: Query<
+        (&mut PlayerGravity, &KinematicCharacterControllerOutput),
+        With<PlayerPhysics>,
+    >,
+    time: Res<Time>,
+) {
+    let (mut gravity, output) = physics_query.single_mut();
+
+    let velocity_change = -1.0;
+
+    if output.grounded {
+        *gravity = PlayerGravity(0.0);
+    } else {
+        gravity.0 += velocity_change * time.delta_seconds();
+    }
+}
+
+pub fn apply_player_gravity(
+    mut physics_query: Query<
+        (&PlayerGravity, &mut KinematicCharacterController),
+        With<PlayerPhysics>,
+    >,
+) {
+    let (gravity, mut controller) = physics_query.single_mut();
+
+    controller.translation = if let Some(translation) = controller.translation {
+        Some(gravity.0 * Vec3::Y + translation)
+    } else {
+        Some(gravity.0 * Vec3::Y)
+    };
+}
+
+#[derive(Event)]
+pub struct PlayerTransformCopyEvent(Vec3);
+
+pub fn send_physics_translation(
+    physics_query: Query<&Transform, With<PlayerPhysics>>,
+    mut events: EventWriter<PlayerTransformCopyEvent>,
+) {
+    let translation = physics_query.single().translation;
+    events.send(PlayerTransformCopyEvent(translation));
+}
+
+pub fn recv_physics_translation_into_player(
+    mut player_query: Query<&mut Transform, With<Player>>,
+    mut events: EventReader<PlayerTransformCopyEvent>,
+) {
+    let mut player_transform = player_query.single_mut();
+
+    for PlayerTransformCopyEvent(translation) in events.read() {
+        player_transform.translation = *translation;
+    }
 }

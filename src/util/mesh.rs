@@ -60,6 +60,8 @@ impl ChunkMeshBuilder {
             }
         }
     }
+
+    #[allow(clippy::too_many_arguments)]
     pub fn add_face(
         &mut self,
         mut face: [[f32; 3]; 4],

@@ -22,6 +22,10 @@ impl BlockPos {
         )
     }
 
+    pub fn is_on_chunk_border(&self) -> bool {
+        self.cmpeq(IVec3::splat(0)).any() || self.cmpeq(IVec3::splat(CHUNK_SIZE_INT - 1)).any()
+    }
+
     pub fn inner(&self) -> IVec3 {
         self.0
     }

@@ -36,6 +36,10 @@ impl ExcavateManufacturateWorld {
         self.chunks.contains_key(&chunk_pos)
     }
 
+    pub fn total_chunk_count(&self) -> usize {
+        self.chunks.len()
+    }
+
     pub fn get_block(&self, block_pos: BlockPos) -> Option<&BlockData> {
         if let Some(chunk_data) = self.get_chunk(ChunkPos::from(block_pos)) {
             Some(chunk_data.get(block_pos))
@@ -44,26 +48,31 @@ impl ExcavateManufacturateWorld {
         }
     }
 
-    pub fn get_block_mut(&mut self, block_pos: BlockPos) -> Option<&mut BlockData> {
-        if let Some(chunk_data) = self.get_chunk_mut(ChunkPos::from(block_pos)) {
-            Some(chunk_data.get_mut(block_pos))
-        } else {
-            None
-        }
-    }
-
-    pub fn take_block(&mut self, block_pos: BlockPos) -> Option<BlockData> {
-        self.get_chunk_mut(ChunkPos::from(block_pos))
-            .map(|chunk_data| chunk_data.get_mut(block_pos).take())
-    }
-
-    /// Attempts to set the block at the position. If the block's chunk does not exist, nothing happens and the function returns false.
+    /// Attempts to set the block at the position. If the block is in a chunk that does not exist and the block is
+    /// not empty, creates a new chunk at that position with just the block inside.
     pub fn set_block(&mut self, block_pos: BlockPos, block_data: BlockData) -> bool {
-        if let Some(block) = self.get_block_mut(block_pos) {
-            *block = block_data;
+        if let Some(chunk_data) = self.get_chunk_mut(ChunkPos::from(block_pos)) {
+            chunk_data.set(block_pos, block_data);
+            true
+        } else if block_data.is_some() {
+            let chunk_pos = ChunkPos::from(block_pos);
+
+            let mut chunk_data = ChunkData::empty(1);
+            chunk_data.set(block_pos, block_data);
+
+            self.insert_chunk(chunk_pos, chunk_data);
+
             true
         } else {
             false
+        }
+    }
+
+    pub fn hit_evaluator(&self) -> impl Fn(IVec3) -> bool + '_ {
+        |pos: IVec3| {
+            let block_pos = BlockPos::from(pos);
+            self.get_block(block_pos)
+                .is_some_and(|block_data| block_data.is_some())
         }
     }
 }

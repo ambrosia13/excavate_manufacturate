@@ -6,6 +6,7 @@ pub mod block_ids {
     pub const GRASS: BlockId = 0;
     pub const DIRT: BlockId = 1;
     pub const BEDROCK: BlockId = 2;
+    pub const STONE: BlockId = 3;
 }
 
 pub mod block_types {
@@ -16,6 +17,7 @@ pub mod block_types {
     pub const GRASS: BlockType = BlockType::new_static(block_ids::GRASS);
     pub const DIRT: BlockType = BlockType::new_static(block_ids::DIRT);
     pub const BEDROCK: BlockType = BlockType::new_static(block_ids::BEDROCK);
+    pub const STONE: BlockType = BlockType::new_static(block_ids::STONE);
 }
 
 pub mod block_data {
@@ -43,5 +45,12 @@ pub mod block_data {
             max: (31, 31),
         },
         hardness: BlockHardnessLevel::Unbreakable,
+    };
+    pub const STONE: StaticBlockData = StaticBlockData {
+        atlas_coordinates: AtlasCoordinates {
+            min: (16, 0),
+            max: (31, 15),
+        },
+        hardness: BlockHardnessLevel::ToolStrength(0),
     };
 }
