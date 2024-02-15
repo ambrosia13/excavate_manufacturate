@@ -32,8 +32,10 @@ impl BlockPos {
         let mut chunk_positions = Vec::with_capacity(7);
         chunk_positions.push(chunk_pos);
 
-        let on_chunk_borders_neg = self.cmpeq(IVec3::splat(0));
-        let on_chunk_borders_pos = self.cmpeq(IVec3::splat(CHUNK_SIZE_INT - 1));
+        let on_chunk_borders_neg = self.as_chunk_offset().cmpeq(IVec3::splat(0));
+        let on_chunk_borders_pos = self
+            .as_chunk_offset()
+            .cmpeq(IVec3::splat(CHUNK_SIZE_INT - 1));
 
         if on_chunk_borders_pos.x {
             chunk_positions.push(chunk_pos + ChunkPos::new(1, 0, 0));

@@ -47,10 +47,14 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
                 ),
                 // generation::generate_chunks,
                 render::populate_chunk_spawn_queue,
-                render::spawn_chunks,
-                render::despawn_chunks,
-                collider::insert_collider_on_player_chunk_pos,
-                collider::remove_collider_on_faraway_chunks,
+                (
+                    (render::spawn_chunks, render::despawn_chunks),
+                    (
+                        collider::insert_collider_on_player_chunk_pos,
+                        collider::remove_collider_on_faraway_chunks,
+                    ),
+                )
+                    .chain(),
                 generation::debug_num_chunks_in_world,
             )
                 .run_if(in_state(GameState::InGame)),

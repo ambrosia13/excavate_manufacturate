@@ -1,9 +1,9 @@
 use bevy::{input::mouse::MouseMotion, prelude::*, window::PrimaryWindow};
 use bevy_rapier3d::control::{KinematicCharacterController, KinematicCharacterControllerOutput};
 
-use super::{keybinds::PlayerKeybinds, Player, PlayerGravity, PlayerPhysics};
+use super::{keybinds::PlayerKeybinds, Player, PlayerPhysics, PlayerVelocity};
 
-pub fn handle_player_movement(
+pub fn handle_player_flight(
     player_query: Query<&Transform, With<Player>>,
     mut player_physics_query: Query<&mut KinematicCharacterController, With<PlayerPhysics>>,
     player_keybinds: Res<PlayerKeybinds>,
@@ -25,6 +25,7 @@ pub fn handle_player_movement(
     if input.pressed(player_keybinds.down) {
         player_movement -= Vec3::Y;
     }
+
     if input.pressed(player_keybinds.left) {
         player_movement += transform.left();
     }
@@ -45,6 +46,71 @@ pub fn handle_player_movement(
         } else {
             Some(player_movement * movement_speed)
         };
+    }
+}
+
+pub fn handle_player_movement(
+    player_query: Query<&Transform, With<Player>>,
+    mut physics_query: Query<
+        (
+            &mut PlayerVelocity,
+            Option<&KinematicCharacterControllerOutput>,
+        ),
+        With<PlayerPhysics>,
+    >,
+    time: Res<Time>,
+    player_keybinds: Res<PlayerKeybinds>,
+    input: Res<Input<KeyCode>>,
+) {
+    let (mut velocity, Some(output)) = physics_query.single_mut() else {
+        return;
+    };
+
+    let transform = player_query.single();
+
+    let forward = transform.forward();
+    let forward = Vec3::new(forward.x, 0.0, forward.z).normalize_or_zero();
+
+    let movement_velocity = 0.5 * time.delta_seconds();
+    let jump_velocity = 0.035;
+
+    let mut player_movement = Vec3::ZERO;
+    let mut player_jump = Vec3::ZERO;
+
+    if input.pressed(player_keybinds.up) && output.grounded {
+        player_jump += Vec3::Y * jump_velocity;
+    }
+
+    if input.pressed(player_keybinds.left) {
+        player_movement += transform.left();
+    }
+    if input.pressed(player_keybinds.right) {
+        player_movement += transform.right();
+    }
+    if input.pressed(player_keybinds.forward) {
+        player_movement += forward;
+    }
+    if input.pressed(player_keybinds.back) {
+        player_movement -= forward;
+    }
+
+    let player_movement = player_movement.normalize_or_zero() * movement_velocity;
+
+    velocity.0 += Vec3::new(player_movement.x, player_jump.y, player_movement.z);
+
+    let friction_coefficient = 15.0;
+    let air_resistance_coefficient = 10.0;
+
+    if output.grounded {
+        let decay = (-friction_coefficient * time.delta_seconds()).exp();
+
+        velocity.x *= decay;
+        velocity.z *= decay;
+    } else {
+        let decay = (-air_resistance_coefficient * time.delta_seconds()).exp();
+
+        velocity.x *= decay;
+        velocity.z *= decay;
     }
 }
 
@@ -73,36 +139,45 @@ pub fn handle_player_rotation(
         Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
 }
 
-pub fn update_player_gravity(
+pub fn handle_player_gravity(
     mut physics_query: Query<
-        (&mut PlayerGravity, &KinematicCharacterControllerOutput),
+        (
+            &mut PlayerVelocity,
+            Option<&KinematicCharacterControllerOutput>,
+        ),
         With<PlayerPhysics>,
     >,
     time: Res<Time>,
 ) {
-    let (mut gravity, output) = physics_query.single_mut();
+    let (mut velocity, Some(output)) = physics_query.single_mut() else {
+        info!("Kinematic character controller output doesn't exist, skipping gravity update");
+        return;
+    };
 
-    let velocity_change = -1.0;
+    let velocity_change = -0.1;
 
     if output.grounded {
-        *gravity = PlayerGravity(0.0);
+        velocity.y = 0.0;
     } else {
-        gravity.0 += velocity_change * time.delta_seconds();
+        velocity.y += velocity_change * time.delta_seconds();
     }
 }
 
-pub fn apply_player_gravity(
+pub fn apply_player_velocity(
     mut physics_query: Query<
-        (&PlayerGravity, &mut KinematicCharacterController),
+        (&PlayerVelocity, &mut KinematicCharacterController),
         With<PlayerPhysics>,
     >,
 ) {
-    let (gravity, mut controller) = physics_query.single_mut();
+    let (PlayerVelocity(velocity), mut controller) = physics_query.single_mut();
+
+    let terminal_velocity = 1.0;
+    let velocity = velocity.clamp_length_max(terminal_velocity);
 
     controller.translation = if let Some(translation) = controller.translation {
-        Some(gravity.0 * Vec3::Y + translation)
+        Some(velocity + translation)
     } else {
-        Some(gravity.0 * Vec3::Y)
+        Some(velocity)
     };
 }
 
@@ -124,6 +199,6 @@ pub fn recv_physics_translation_into_player(
     let mut player_transform = player_query.single_mut();
 
     for PlayerTransformCopyEvent(translation) in events.read() {
-        player_transform.translation = *translation;
+        player_transform.translation = *translation + Vec3::new(0.0, 0.8, 0.0);
     }
 }

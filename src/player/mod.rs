@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
+use rand::{random, Rng};
 
 use crate::{
     state::GameState,
@@ -30,10 +31,11 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
                     // Player movement
                     (
                         (
+                            //movement::handle_player_flight,
                             movement::handle_player_movement,
                             movement::handle_player_rotation,
-                            movement::update_player_gravity,
-                            movement::apply_player_gravity,
+                            movement::handle_player_gravity,
+                            movement::apply_player_velocity,
                         ),
                         (
                             movement::send_physics_translation,
@@ -45,7 +47,7 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
                 )
                     .run_if(in_state(GameState::InGame)),
             )
-            .add_plugins(RapierDebugRenderPlugin::default());
+            .add_plugins(RapierDebugRenderPlugin::default().disabled());
     }
 }
 
@@ -55,11 +57,14 @@ pub struct Player;
 #[derive(Component)]
 pub struct PlayerPhysics;
 
-#[derive(Component)]
-pub struct PlayerGravity(f32);
+#[derive(Component, Deref, DerefMut)]
+pub struct PlayerVelocity(pub Vec3);
 
 fn setup_player(mut commands: Commands) {
-    let player_block_pos = BlockPos::new(0, 50, 0);
+    let x = rand::thread_rng().gen_range(-2000..=2000);
+    let z = rand::thread_rng().gen_range(-2000..=2000);
+
+    let player_block_pos = BlockPos::new(x, 50, z);
     let player_chunk_pos = ChunkPos::from(player_block_pos);
 
     let player_transform = Transform::from_translation(player_block_pos.as_vec3());
@@ -76,14 +81,14 @@ fn setup_player(mut commands: Commands) {
 
     commands.spawn((
         PlayerPhysics,
-        Collider::cuboid(0.4, 0.9, 0.4),
+        Collider::cuboid(0.3, 0.9, 0.3),
         RigidBody::KinematicVelocityBased,
         KinematicCharacterController::default(),
         TransformBundle {
             local: player_transform,
             ..Default::default()
         },
-        PlayerGravity(0.0),
+        PlayerVelocity(Vec3::ZERO),
     ));
 
     info!("Initialized player camera");

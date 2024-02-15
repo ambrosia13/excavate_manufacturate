@@ -156,34 +156,74 @@ pub fn generate_chunks_on_thread_pool(
 
     let thread_pool = AsyncComputeTaskPool::get();
 
+    let mut chunk_positions = Vec::new();
+
     for x_offset in lower..=upper {
         for y_offset in lower..=upper {
             for z_offset in lower..=upper {
                 let chunk_pos = player_chunk_pos + ChunkPos::new(x_offset, y_offset, z_offset);
 
-                // If the chunk has already been set for generation, or has already been generated, skip this
                 if possibly_generated_chunks.contains(&chunk_pos)
                     || em_world.chunk_exists(chunk_pos)
                 {
                     continue;
                 }
 
-                let world_generator = world_generator.clone();
-
-                let task = thread_pool.spawn(async move {
-                    let chunk_data = ChunkData::with_data(1, |block_pos| {
-                        let block_pos = block_pos + BlockPos::from(chunk_pos);
-                        world_generator.generate_terrain_noise(block_pos)
-                    });
-
-                    (chunk_pos, chunk_data)
-                });
-
-                commands.spawn(GeneratedChunkTask(task));
-                possibly_generated_chunks.insert(chunk_pos); // mark this chunk as being generated
+                chunk_positions.push(chunk_pos);
             }
         }
     }
+
+    chunk_positions.sort_unstable_by(|&a, &b| {
+        player_chunk_pos
+            .distance_squared(a.inner())
+            .cmp(&player_chunk_pos.distance_squared(b.inner()))
+    });
+
+    for chunk_pos in chunk_positions {
+        let world_generator = world_generator.clone();
+
+        let task = thread_pool.spawn(async move {
+            let chunk_data = ChunkData::with_data(1, |block_pos| {
+                let block_pos = block_pos + BlockPos::from(chunk_pos);
+                world_generator.generate_terrain_noise(block_pos)
+            });
+
+            (chunk_pos, chunk_data)
+        });
+
+        commands.spawn(GeneratedChunkTask(task));
+        possibly_generated_chunks.insert(chunk_pos); // mark this chunk as being generated
+    }
+
+    // for x_offset in lower..=upper {
+    //     for y_offset in lower..=upper {
+    //         for z_offset in lower..=upper {
+    //             let chunk_pos = player_chunk_pos + ChunkPos::new(x_offset, y_offset, z_offset);
+
+    //             // If the chunk has already been set for generation, or has already been generated, skip this
+    //             if possibly_generated_chunks.contains(&chunk_pos)
+    //                 || em_world.chunk_exists(chunk_pos)
+    //             {
+    //                 continue;
+    //             }
+
+    //             let world_generator = world_generator.clone();
+
+    //             let task = thread_pool.spawn(async move {
+    //                 let chunk_data = ChunkData::with_data(1, |block_pos| {
+    //                     let block_pos = block_pos + BlockPos::from(chunk_pos);
+    //                     world_generator.generate_terrain_noise(block_pos)
+    //                 });
+
+    //                 (chunk_pos, chunk_data)
+    //             });
+
+    //             commands.spawn(GeneratedChunkTask(task));
+    //             possibly_generated_chunks.insert(chunk_pos); // mark this chunk as being generated
+    //         }
+    //     }
+    // }
 }
 
 pub fn poll_generated_chunks(

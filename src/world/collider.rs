@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use bevy_rapier3d::geometry::Collider;
+use bevy_rapier3d::{dynamics::RigidBody, geometry::Collider, rapier::dynamics::RigidBodyBuilder};
 
 use crate::{
     player::Player,
@@ -32,7 +32,7 @@ pub fn insert_collider_on_player_chunk_pos(
         {
             if let Some(entity) = spawned_chunks.get(&chunk_pos) {
                 if let Some(mut entity_commands) = commands.get_entity(*entity) {
-                    entity_commands.insert(collider);
+                    entity_commands.insert((collider, RigidBody::Fixed));
                 } else {
                     warn!("Entity at chunk position {:?} doesn't exist", chunk_pos);
                 }
