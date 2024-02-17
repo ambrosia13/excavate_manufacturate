@@ -1,8 +1,8 @@
-use std::sync::Arc;
+use std::{ops::Deref, sync::Arc};
 
 use bevy::{
     prelude::*,
-    tasks::{AsyncComputeTaskPool, Task},
+    tasks::{AsyncComputeTaskPool, ComputeTaskPool, Task, TaskPool},
     utils::HashSet,
 };
 
@@ -140,6 +140,78 @@ pub fn remove_chunk_generation_structures(mut commands: Commands) {
 
 #[derive(Component)]
 pub struct GeneratedChunkTask(Task<(ChunkPos, ChunkData)>);
+
+// So we can make which task pool you use be generic
+pub trait GetTaskPool: Deref<Target = TaskPool> + 'static {
+    fn get() -> &'static Self;
+}
+
+impl GetTaskPool for AsyncComputeTaskPool {
+    fn get() -> &'static Self {
+        AsyncComputeTaskPool::get()
+    }
+}
+
+impl GetTaskPool for ComputeTaskPool {
+    fn get() -> &'static Self {
+        ComputeTaskPool::get()
+    }
+}
+pub fn generate_chunks_multithreaded<T: GetTaskPool>(
+    mut commands: Commands,
+    em_world: Res<ExcavateManufacturateWorld>,
+    world_generator: Res<WorldGeneratorResource>,
+    render_distance: Res<RenderDistance>,
+    player_query: Query<&ChunkPos, With<Player>>,
+    mut possibly_generated_chunks: ResMut<PossiblyGeneratedChunks>,
+) {
+    let player_chunk_pos = *player_query.single();
+
+    let lower = -render_distance.chunks();
+    let upper = render_distance.chunks();
+
+    let thread_pool = T::get();
+
+    let mut chunk_positions = Vec::new();
+
+    for x_offset in lower..=upper {
+        for y_offset in lower..=upper {
+            for z_offset in lower..=upper {
+                let chunk_pos = player_chunk_pos + ChunkPos::new(x_offset, y_offset, z_offset);
+
+                if possibly_generated_chunks.contains(&chunk_pos)
+                    || em_world.chunk_exists(chunk_pos)
+                {
+                    continue;
+                }
+
+                chunk_positions.push(chunk_pos);
+            }
+        }
+    }
+
+    chunk_positions.sort_unstable_by(|&a, &b| {
+        player_chunk_pos
+            .distance_squared(a.inner())
+            .cmp(&player_chunk_pos.distance_squared(b.inner()))
+    });
+
+    for chunk_pos in chunk_positions {
+        let world_generator = world_generator.clone();
+
+        let task = thread_pool.spawn(async move {
+            let chunk_data = ChunkData::with_data(1, |block_pos| {
+                let block_pos = block_pos + BlockPos::from(chunk_pos);
+                world_generator.generate_terrain_noise(block_pos)
+            });
+
+            (chunk_pos, chunk_data)
+        });
+
+        commands.spawn(GeneratedChunkTask(task));
+        possibly_generated_chunks.insert(chunk_pos); // mark this chunk as being generated
+    }
+}
 
 pub fn generate_chunks_on_thread_pool(
     mut commands: Commands,

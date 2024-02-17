@@ -23,7 +23,11 @@ impl BlockPos {
     }
 
     pub fn is_on_chunk_border(&self) -> bool {
-        self.cmpeq(IVec3::splat(0)).any() || self.cmpeq(IVec3::splat(CHUNK_SIZE_INT - 1)).any()
+        self.as_chunk_offset().cmpeq(IVec3::splat(0)).any()
+            || self
+                .as_chunk_offset()
+                .cmpeq(IVec3::splat(CHUNK_SIZE_INT - 1))
+                .any()
     }
 
     pub fn get_touched_chunk_positions(self) -> Vec<ChunkPos> {

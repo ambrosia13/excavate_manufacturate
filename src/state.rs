@@ -6,3 +6,10 @@ pub enum GameState {
     Menu,
     InGame,
 }
+
+#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
+pub enum PlayerGameMode {
+    Survival,
+    #[default]
+    Creative,
+}

@@ -1,5 +1,8 @@
 use bevy::prelude::*;
-use bevy_rapier3d::{dynamics::RigidBody, geometry::Collider, rapier::dynamics::RigidBodyBuilder};
+use bevy_rapier3d::{
+    dynamics::RigidBody,
+    geometry::{Collider, ColliderDisabled},
+};
 
 use crate::{
     player::Player,
@@ -11,6 +14,7 @@ use super::render::{ChunkMeshes, SpawnedChunks};
 pub fn insert_collider_on_player_chunk_pos(
     mut commands: Commands,
     player_query: Query<&BlockPos, With<Player>>,
+    collider_query: Query<Entity, (With<ChunkPos>, With<Collider>)>,
     spawned_chunks: Res<SpawnedChunks>,
     chunk_meshes: Res<ChunkMeshes>,
     meshes: Res<Assets<Mesh>>,
@@ -20,6 +24,13 @@ pub fn insert_collider_on_player_chunk_pos(
     let chunk_positions = player_block_pos.get_touched_chunk_positions();
 
     for chunk_pos in chunk_positions {
+        if let Some(&chunk_entity) = spawned_chunks.get(&chunk_pos) {
+            // If the chunk already has a collider, don't make a new one
+            if collider_query.contains(chunk_entity) {
+                continue;
+            }
+        }
+
         if let Some(collider) = chunk_meshes
             .get(&chunk_pos)
             .and_then(|handle| meshes.get(handle))

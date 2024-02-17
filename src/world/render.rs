@@ -98,6 +98,19 @@ pub fn spawn_chunks(
             continue;
         }
 
+        // let mesh_handle = if let Some(mesh_handle) = chunk_meshes.get(&chunk_pos) {
+        //     // The mesh already exists, use a weak handle to it to spawn it
+        //     mesh_handle.clone_weak()
+        // } else {
+        //     // The mesh hasn't been created yet, let's create it
+        //     let mesh = chunk.get_mesh(chunk_pos, &block_registry, &em_world);
+        //     let mesh_handle = meshes.add(mesh);
+
+        //     chunk_meshes.insert(chunk_pos, mesh_handle.clone());
+
+        //     mesh_handle
+        // };
+
         let mesh = chunk.get_mesh(chunk_pos, &block_registry, &em_world);
         let mesh_handle = meshes.add(mesh);
 

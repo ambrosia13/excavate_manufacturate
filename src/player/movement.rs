@@ -16,7 +16,7 @@ pub fn handle_player_flight(
     let forward = transform.forward();
     let forward = Vec3::new(forward.x, 0.0, forward.z).normalize_or_zero();
 
-    let movement_speed = 7.5 * time.delta_seconds();
+    let movement_speed = 12.5 * time.delta_seconds();
     let mut player_movement = Vec3::ZERO;
 
     if input.pressed(player_keybinds.up) {
@@ -133,7 +133,7 @@ pub fn handle_player_rotation(
         yaw -= (sensitivity * ev.delta.x * window_scale).to_radians();
     }
 
-    pitch = pitch.clamp((-170.0f32).to_radians(), (170.0f32).to_radians());
+    pitch = pitch.clamp((-89.5f32).to_radians(), (89.5f32).to_radians());
 
     transform.rotation =
         Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);

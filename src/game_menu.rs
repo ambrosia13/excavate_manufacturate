@@ -5,7 +5,9 @@ use bevy::{
 use bevy_egui::{egui, EguiContexts};
 
 use crate::{
-    player::Player, state::GameState, util::block_pos::BlockPos,
+    player::Player,
+    state::{GameState, PlayerGameMode},
+    util::block_pos::BlockPos,
     world::render_distance::RenderDistance,
 };
 
@@ -20,6 +22,7 @@ impl Plugin for ExcavateManufacturateGameMenuPlugin {
 fn game_menu_system(
     mut contexts: EguiContexts,
     mut next_state: ResMut<NextState<GameState>>,
+    mut next_game_mode: ResMut<NextState<PlayerGameMode>>,
     mut render_distance: ResMut<RenderDistance>,
     diagnostics: Res<DiagnosticsStore>,
     player_transform: Query<(&Transform, &BlockPos), With<Player>>,
@@ -33,7 +36,7 @@ fn game_menu_system(
 
         if let Some(fps) = diagnostics
             .get(FrameTimeDiagnosticsPlugin::FPS)
-            .and_then(|fps| fps.smoothed())
+            .and_then(|fps| fps.value())
         {
             ui.label(format!("Fps: {:.3}", fps));
         }
@@ -42,6 +45,13 @@ fn game_menu_system(
         ui.add(egui::Slider::new(&mut render_distance_chunks, 2..=16).text("Render distance"));
 
         render_distance.set_to(render_distance_chunks as usize);
+
+        if ui.button("Creative mode").clicked() {
+            next_game_mode.set(PlayerGameMode::Creative);
+        }
+        if ui.button("Survival mode").clicked() {
+            next_game_mode.set(PlayerGameMode::Survival);
+        }
 
         if ui.button("Exit to main menu").clicked() {
             next_state.set(GameState::Menu);

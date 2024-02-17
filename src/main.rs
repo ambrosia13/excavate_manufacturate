@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use state::GameState;
+use state::{GameState, PlayerGameMode};
 
 mod game;
 mod game_menu;
@@ -12,6 +12,7 @@ mod world;
 fn main() {
     App::new()
         .add_state::<GameState>()
+        .add_state::<PlayerGameMode>()
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {

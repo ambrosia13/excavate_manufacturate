@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
-use rand::{random, Rng};
+use rand::Rng;
 
 use crate::{
-    state::GameState,
+    state::{GameState, PlayerGameMode},
     util::{block_pos::BlockPos, chunk_pos::ChunkPos},
 };
 
@@ -31,11 +31,18 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
                     // Player movement
                     (
                         (
-                            //movement::handle_player_flight,
-                            movement::handle_player_movement,
                             movement::handle_player_rotation,
-                            movement::handle_player_gravity,
-                            movement::apply_player_velocity,
+                            // Creative movement, just flight without physics
+                            movement::handle_player_flight
+                                .run_if(in_state(PlayerGameMode::Creative)),
+                            // Survival movement, includes physics
+                            (
+                                movement::handle_player_gravity,
+                                movement::handle_player_movement,
+                                movement::apply_player_velocity,
+                            )
+                                .chain()
+                                .run_if(in_state(PlayerGameMode::Survival)),
                         ),
                         (
                             movement::send_physics_translation,

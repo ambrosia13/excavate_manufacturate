@@ -1,6 +1,7 @@
 use bevy::{
     pbr::{CascadeShadowConfigBuilder, DirectionalLightShadowMap},
     prelude::*,
+    tasks::{AsyncComputeTaskPool, ComputeTaskPool},
 };
 
 use crate::state::GameState;
@@ -43,7 +44,7 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
                 (
                     // Multithreaded chunk generation
                     generation::poll_generated_chunks,
-                    generation::generate_chunks_on_thread_pool,
+                    generation::generate_chunks_multithreaded::<AsyncComputeTaskPool>,
                 ),
                 // generation::generate_chunks,
                 render::populate_chunk_spawn_queue,
