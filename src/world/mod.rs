@@ -1,7 +1,7 @@
 use bevy::{
     pbr::{CascadeShadowConfigBuilder, DirectionalLightShadowMap},
     prelude::*,
-    tasks::{AsyncComputeTaskPool, ComputeTaskPool},
+    tasks::AsyncComputeTaskPool,
 };
 
 use crate::state::GameState;

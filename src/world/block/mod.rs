@@ -11,14 +11,16 @@ pub type BlockId = u8;
 #[derive(Debug, Clone)]
 pub struct BlockType {
     pub id: BlockId, // TODO: small id is efficient now, but may be problematic later
-    pub dynamic_data: Option<Entity>,
+
+                     // An entity ID, serves as a pointer to dynamic data unique to this block.
+                     //pub dynamic_data: Option<Entity>,
 }
 
 impl BlockType {
     pub const fn new_static(id: BlockId) -> Self {
         Self {
             id,
-            dynamic_data: None,
+            //dynamic_data: None,
         }
     }
 }
