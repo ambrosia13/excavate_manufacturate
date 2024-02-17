@@ -20,8 +20,8 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<PlayerTransformCopyEvent>()
             .add_systems(Startup, keybinds::setup_player_keybinds)
-            .add_systems(OnEnter(GameState::InGame), setup_player)
-            .add_systems(OnExit(GameState::InGame), despawn_player)
+            .add_systems(OnEnter(GameState::InGame), setup)
+            .add_systems(OnExit(GameState::InGame), cleanup)
             .add_systems(
                 Update,
                 (
@@ -67,7 +67,7 @@ pub struct PlayerPhysics;
 #[derive(Component, Deref, DerefMut)]
 pub struct PlayerVelocity(pub Vec3);
 
-fn setup_player(mut commands: Commands) {
+fn setup(mut commands: Commands) {
     let x = rand::thread_rng().gen_range(-2000..=2000);
     let z = rand::thread_rng().gen_range(-2000..=2000);
 
@@ -98,7 +98,7 @@ fn setup_player(mut commands: Commands) {
         PlayerVelocity(Vec3::ZERO),
     ));
 
-    info!("Initialized player camera");
+    info!("Set up player");
 }
 
 fn update_player_pos(
@@ -109,9 +109,16 @@ fn update_player_pos(
     *chunk_pos = ChunkPos::from(*block_pos);
 }
 
-fn despawn_player(mut commands: Commands, player_query: Query<Entity, With<Player>>) {
+fn cleanup(
+    mut commands: Commands,
+    player_query: Query<Entity, With<Player>>,
+    physics_query: Query<Entity, With<PlayerPhysics>>,
+) {
     let player = player_query.single();
     commands.entity(player).despawn();
 
-    info!("Removed player camera");
+    let physics = physics_query.single();
+    commands.entity(physics).despawn();
+
+    info!("Cleaned up player");
 }
