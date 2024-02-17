@@ -13,6 +13,7 @@ pub mod generation;
 pub mod render;
 pub mod render_distance;
 pub mod world_access;
+pub mod worldgen;
 
 pub const CHUNK_SIZE: usize = 32;
 pub const CHUNK_SIZE_INT: i32 = CHUNK_SIZE as i32;
@@ -32,10 +33,10 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
             OnEnter(GameState::InGame),
             (
                 setup_light,
-                world_access::setup_world_access,
-                generation::setup_world_generator,
-                generation::setup_chunk_generation_structures,
-                render::setup_chunk_spawning_structures,
+                world_access::setup,
+                worldgen::setup,
+                generation::setup,
+                render::setup,
             ),
         )
         .add_systems(
@@ -64,10 +65,10 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
             OnExit(GameState::InGame),
             (
                 remove_light,
-                world_access::remove_world_access,
-                generation::remove_world_generator,
-                generation::remove_chunk_generation_structures,
-                render::remove_chunk_spawning_structures,
+                world_access::cleanup,
+                worldgen::cleanup,
+                generation::cleanup,
+                render::cleanup,
                 render::despawn_all_chunks,
             ),
         );

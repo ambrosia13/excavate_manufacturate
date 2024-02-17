@@ -77,12 +77,12 @@ impl ExcavateManufacturateWorld {
     }
 }
 
-pub fn setup_world_access(mut commands: Commands) {
+pub fn setup(mut commands: Commands) {
     commands.insert_resource(ExcavateManufacturateWorld::new());
-    info!("Initialized world");
+    info!("Set up world data");
 }
 
-pub fn remove_world_access(mut commands: Commands) {
+pub fn cleanup(mut commands: Commands) {
     commands.remove_resource::<ExcavateManufacturateWorld>();
-    info!("Removed world");
+    info!("Cleaned up world data");
 }

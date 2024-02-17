@@ -35,20 +35,26 @@ impl ChunkSpawnQueue {
     }
 }
 
-pub fn setup_chunk_spawning_structures(mut commands: Commands) {
+pub fn setup(mut commands: Commands) {
     commands.insert_resource(SpawnedChunks(HashMap::new()));
     commands.insert_resource(ChunkMeshes(HashMap::new()));
     commands.insert_resource(ChunkSpawnQueue(SegQueue::new()));
 
-    info!("Initialized chunk spawning data structures");
+    info!("Setup chunk renderer");
 }
 
-pub fn remove_chunk_spawning_structures(mut commands: Commands) {
+pub fn cleanup(
+    mut commands: Commands,
+    chunks_query: Query<&ChunkPos>,
+    spawned_chunks: ResMut<SpawnedChunks>,
+) {
     commands.remove_resource::<SpawnedChunks>();
     commands.remove_resource::<ChunkMeshes>();
     commands.remove_resource::<ChunkSpawnQueue>();
 
-    info!("Removed chunk spawning data structures");
+    despawn_all_chunks(commands, chunks_query, spawned_chunks);
+
+    info!("Cleaned up chunk renderer");
 }
 
 pub fn populate_chunk_spawn_queue(
