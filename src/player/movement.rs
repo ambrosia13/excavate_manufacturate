@@ -72,7 +72,7 @@ pub fn handle_player_movement(
     let forward = Vec3::new(forward.x, 0.0, forward.z).normalize_or_zero();
 
     let movement_velocity = 0.5 * time.delta_seconds();
-    let jump_velocity = 0.035;
+    let jump_velocity = 0.0325;
 
     let mut player_movement = Vec3::ZERO;
     let mut player_jump = Vec3::ZERO;
