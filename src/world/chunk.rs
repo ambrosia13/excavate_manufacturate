@@ -26,14 +26,9 @@ impl ChunkData {
         let blocks = (0..(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE))
             .map(|i| {
                 let data = supplier(BlockPos::from(Self::deindexify(i)));
+                num_blocks += data.is_some() as u32; // If the block isn't empty, increment num_blocks
 
-                match data {
-                    Some(block_type) => {
-                        num_blocks += 1;
-                        Some(block_type)
-                    }
-                    None => None,
-                }
+                data
             })
             .collect();
 
@@ -123,7 +118,7 @@ impl ChunkData {
                             self.try_get_from_raw_offset(neighbor_pos)
                                 .is_some_and(|block_data| block_data.is_none())
                         } else {
-                            let neighbor_pos = (offset + IVec3::new(dx, dy, dz));
+                            let neighbor_pos = offset + IVec3::new(dx, dy, dz);
                             let world_neighbor_pos =
                                 BlockPos::from(chunk_pos) + BlockPos::from(neighbor_pos);
 
