@@ -6,14 +6,14 @@ pub mod static_block_data;
 
 pub type BlockData = Option<BlockType>;
 
+// TODO: u8 id is efficient now, but may be problematic later
 pub type BlockId = u8;
 
 #[derive(Debug, Clone)]
 pub struct BlockType {
-    pub id: BlockId, // TODO: small id is efficient now, but may be problematic later
-
-                     // An entity ID, serves as a pointer to dynamic data unique to this block.
-                     //pub dynamic_data: Option<Entity>,
+    pub id: BlockId,
+    // An entity ID, serves as a pointer to dynamic data unique to this block.
+    //pub dynamic_data: Option<Entity>,
 }
 
 impl BlockType {

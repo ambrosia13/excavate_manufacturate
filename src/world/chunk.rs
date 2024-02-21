@@ -9,37 +9,27 @@ use bevy::prelude::*;
 
 pub struct ChunkData {
     blocks: Vec<BlockData>,
-
-    /// Isn't truly whether the chunk is empty. This just tells whether or not a chunk has no blocks in it. If the chunk
-    /// gets a block in it, and then all blocks are destroyed, this will still be false. It only updates the first time
-    /// the chunk gets data.
-    is_empty: bool,
-
-    scale: i32,
+    num_blocks: u32,
 }
 
 impl ChunkData {
-    pub fn empty(scale: i32) -> Self {
-        let chunk_size = Self::get_scaled_chunk_size(scale);
-
+    pub fn empty() -> Self {
         Self {
-            blocks: vec![BlockData::None; chunk_size * chunk_size * chunk_size],
-            is_empty: true,
-            scale,
+            blocks: vec![BlockData::None; CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE],
+            num_blocks: 0,
         }
     }
 
-    pub fn with_data<F: FnMut(BlockPos) -> BlockData>(scale: i32, mut supplier: F) -> Self {
-        let chunk_size = Self::get_scaled_chunk_size(scale);
-        let mut is_empty = true;
+    pub fn with_data<F: FnMut(BlockPos) -> BlockData>(mut supplier: F) -> Self {
+        let mut num_blocks = 0;
 
-        let blocks = (0..(chunk_size * chunk_size * chunk_size))
+        let blocks = (0..(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE))
             .map(|i| {
-                let data = supplier(BlockPos::from(Self::deindexify(i, scale) * scale));
+                let data = supplier(BlockPos::from(Self::deindexify(i)));
 
                 match data {
                     Some(block_type) => {
-                        is_empty = false;
+                        num_blocks += 1;
                         Some(block_type)
                     }
                     None => None,
@@ -47,63 +37,57 @@ impl ChunkData {
             })
             .collect();
 
-        Self {
-            blocks,
-            is_empty,
-            scale,
-        }
+        Self { blocks, num_blocks }
     }
 
     pub fn is_empty(&self) -> bool {
-        self.is_empty
-    }
-
-    pub fn get_scaled_chunk_size(scale: i32) -> usize {
-        CHUNK_SIZE / scale as usize
+        self.num_blocks == 0
     }
 
     pub fn get_raw_array(&self) -> &[BlockData] {
         &self.blocks
     }
 
-    pub fn indexify(offset: IVec3, scale: i32) -> usize {
-        let scaled_chunk_size = Self::get_scaled_chunk_size(scale);
-
-        (offset.z as usize * scaled_chunk_size * scaled_chunk_size)
-            + (offset.y as usize * scaled_chunk_size)
+    pub fn indexify(offset: IVec3) -> usize {
+        (offset.z as usize * CHUNK_SIZE * CHUNK_SIZE)
+            + (offset.y as usize * CHUNK_SIZE)
             + offset.x as usize
     }
 
-    pub fn deindexify(index: usize, scale: i32) -> IVec3 {
-        let scaled_chunk_size = Self::get_scaled_chunk_size(scale);
-
-        let z = index / (scaled_chunk_size * scaled_chunk_size);
-        let y = (index % (scaled_chunk_size * scaled_chunk_size)) / scaled_chunk_size;
-        let x = index % scaled_chunk_size;
+    pub fn deindexify(index: usize) -> IVec3 {
+        let z = index / (CHUNK_SIZE * CHUNK_SIZE);
+        let y = (index % (CHUNK_SIZE * CHUNK_SIZE)) / CHUNK_SIZE;
+        let x = index % CHUNK_SIZE;
 
         IVec3::new(x as i32, y as i32, z as i32)
     }
 
     pub fn get(&self, block_pos: BlockPos) -> &BlockData {
-        let offset = block_pos.as_chunk_offset().inner() / self.scale;
-        &self.blocks[Self::indexify(offset, self.scale)]
+        let offset = block_pos.as_chunk_offset().inner();
+        &self.blocks[Self::indexify(offset)]
     }
 
     pub fn set(&mut self, block_pos: BlockPos, block: BlockData) {
-        if block.is_some() {
-            self.is_empty = false;
+        if self.get(block_pos).is_some() {
+            // The existing block is being replaced by air.
+            if block.is_none() {
+                self.num_blocks -= 1;
+            }
+        } else if block.is_some() {
+            // A block is being placed in an empty spot, increasing the total amount.
+            self.num_blocks += 1;
         }
 
-        let offset = block_pos.as_chunk_offset().inner() / self.scale;
-        self.blocks[Self::indexify(offset, self.scale)] = block;
+        let offset = block_pos.as_chunk_offset().inner();
+        self.blocks[Self::indexify(offset)] = block;
     }
 
     pub fn get_from_raw_offset(&self, offset: IVec3) -> &BlockData {
-        &self.blocks[Self::indexify(offset, self.scale)]
+        &self.blocks[Self::indexify(offset)]
     }
 
     pub fn try_get_from_raw_offset(&self, offset: IVec3) -> Option<&BlockData> {
-        self.blocks.get(Self::indexify(offset, self.scale))
+        self.blocks.get(Self::indexify(offset))
     }
 
     pub fn get_mesh(
@@ -114,14 +98,11 @@ impl ChunkData {
     ) -> Mesh {
         let mut mesh_builder = ChunkMeshBuilder::new();
 
-        let scale = self.scale;
-        let scaled_chunk_size = Self::get_scaled_chunk_size(scale) as i32;
-
-        for x in 0..scaled_chunk_size {
-            for y in 0..scaled_chunk_size {
-                for z in 0..scaled_chunk_size {
+        for x in 0..(CHUNK_SIZE as i32) {
+            for y in 0..(CHUNK_SIZE as i32) {
+                for z in 0..(CHUNK_SIZE as i32) {
                     let offset = IVec3::new(x, y, z);
-                    let index = Self::indexify(offset, scale);
+                    let index = Self::indexify(offset);
 
                     let block = &self.blocks[index];
 
@@ -134,7 +115,7 @@ impl ChunkData {
 
                         let neighbor_exists_in_chunk = neighbor_pos.cmpge(IVec3::splat(0)).all()
                             && neighbor_pos
-                                .cmple(IVec3::splat(scaled_chunk_size - 1))
+                                .cmple(IVec3::splat(CHUNK_SIZE as i32 - 1))
                                 .all();
 
                         let add_face = if neighbor_exists_in_chunk {
@@ -142,7 +123,7 @@ impl ChunkData {
                             self.try_get_from_raw_offset(neighbor_pos)
                                 .is_some_and(|block_data| block_data.is_none())
                         } else {
-                            let neighbor_pos = (offset + IVec3::new(dx, dy, dz)) * scale;
+                            let neighbor_pos = (offset + IVec3::new(dx, dy, dz));
                             let world_neighbor_pos =
                                 BlockPos::from(chunk_pos) + BlockPos::from(neighbor_pos);
 
@@ -160,8 +141,8 @@ impl ChunkData {
                                 face,
                                 normals,
                                 uvs,
-                                offset.as_vec3() * scale as f32,
-                                scale as f32,
+                                offset.as_vec3(),
+                                1.0,
                                 static_block_data.atlas_coordinates,
                                 block_registry.atlas_size,
                             );

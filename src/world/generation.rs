@@ -96,7 +96,7 @@ pub fn generate_chunks_multithreaded<T: GetTaskPool>(
         let world_generator = world_generator.clone();
 
         let task = thread_pool.spawn(async move {
-            let chunk_data = ChunkData::with_data(1, |block_pos| {
+            let chunk_data = ChunkData::with_data(|block_pos| {
                 let block_pos = block_pos + BlockPos::from(chunk_pos);
                 world_generator.generate_terrain_noise(block_pos)
             });

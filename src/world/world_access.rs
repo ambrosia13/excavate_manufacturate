@@ -57,7 +57,7 @@ impl ExcavateManufacturateWorld {
         } else if block_data.is_some() {
             let chunk_pos = ChunkPos::from(block_pos);
 
-            let mut chunk_data = ChunkData::empty(1);
+            let mut chunk_data = ChunkData::empty();
             chunk_data.set(block_pos, block_data);
 
             self.insert_chunk(chunk_pos, chunk_data);

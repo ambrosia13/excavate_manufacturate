@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use bevy::prelude::*;
+use rand::{thread_rng, Rng};
 
 use crate::{util::block_pos::BlockPos, world::block};
 
@@ -18,46 +19,80 @@ impl WorldGenerator {
     pub fn generate_terrain_noise(&self, block_pos: BlockPos) -> BlockData {
         (self.terrain_noise)(block_pos)
     }
+
+    pub fn generate_landscape_features(
+        &self,
+        block_pos: BlockPos,
+        world: &mut ExcavateManufacturateWorld,
+    ) {
+        (self.landscape_feature_generator)(block_pos, world);
+    }
 }
 
 pub fn setup(mut commands: Commands) {
+    use block::excavatemanufacturate_blocks::block_types::*;
+
     let world_generator = WorldGenerator {
-        terrain_noise: |block_pos| {
-            use block::excavatemanufacturate_blocks::block_types::*;
+        terrain_noise: |block_pos| match block_pos.y.cmp(&0) {
+            std::cmp::Ordering::Less => BlockData::None,
+            std::cmp::Ordering::Equal => BlockData::Some(BEDROCK),
+            std::cmp::Ordering::Greater => {
+                use noisy_bevy::*;
 
-            match block_pos.y.cmp(&0) {
-                std::cmp::Ordering::Less => BlockData::None,
-                std::cmp::Ordering::Equal => BlockData::Some(BEDROCK),
-                std::cmp::Ordering::Greater => {
-                    let position = block_pos.as_vec3();
+                let position = block_pos.as_vec3();
+                let domain_warp = Vec3::ZERO;
 
-                    let hills_multiplier =
-                        noisy_bevy::simplex_noise_2d(position.xz() * 0.005 + 10000.0) * 0.5 + 0.5;
+                let hills_multiplier =
+                    simplex_noise_2d(position.xz() * 0.005 + 10000.0) * 0.5 + 0.5;
 
-                    let hills_generator = |position: Vec3| {
-                        position.y
-                            + hills_multiplier
-                                * 20.0
-                                * noisy_bevy::simplex_noise_2d(position.xz() * 0.025)
-                    };
+                let hills_generator = |position: Vec3| {
+                    position.y
+                        + hills_multiplier
+                            * 20.0
+                            * simplex_noise_2d((position + domain_warp).xz() * 0.025)
+                };
 
-                    let noise = hills_generator(position);
+                let noise = hills_generator(position);
 
-                    let base_ground_level = 30.0;
+                let base_ground_level = 30.0;
 
-                    if noise < base_ground_level - 10.0 {
-                        BlockData::Some(STONE)
-                    } else if noise < base_ground_level - 1.0 {
-                        BlockData::Some(DIRT)
-                    } else if noise < base_ground_level {
-                        BlockData::Some(GRASS)
-                    } else {
-                        BlockData::None
-                    }
+                if noise < base_ground_level - 10.0 {
+                    BlockData::Some(STONE)
+                } else if noise < base_ground_level - 1.0 {
+                    BlockData::Some(DIRT)
+                } else if noise < base_ground_level {
+                    BlockData::Some(GRASS)
+                } else {
+                    BlockData::None
                 }
             }
         },
-        landscape_feature_generator: |_, _| {},
+        landscape_feature_generator: |block_pos, world| {
+            let boulder_generator =
+                |block_pos: BlockPos, world: &mut ExcavateManufacturateWorld| {
+                    let boulder_radius = 3;
+
+                    for x in -boulder_radius..=boulder_radius {
+                        for y in -boulder_radius..=boulder_radius {
+                            for z in -boulder_radius..=boulder_radius {
+                                let pos = block_pos + BlockPos::new(x, y, z);
+                                let distance = block_pos.distance_squared(*pos);
+
+                                if distance < 4 {
+                                    world.set_block(pos, BlockData::Some(STONE));
+                                }
+                            }
+                        }
+                    }
+                };
+
+            let rand = thread_rng().gen_range(0..1000);
+
+            match rand {
+                0..=9 => boulder_generator(block_pos, world),
+                _ => {}
+            }
+        },
     };
 
     commands.insert_resource(WorldGeneratorResource(Arc::new(world_generator)));
