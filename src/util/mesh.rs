@@ -5,6 +5,12 @@ use bevy::{
 
 use crate::world::block::static_block_data::AtlasCoordinates;
 
+pub enum BlockFace {
+    Top,
+    Side,
+    Bottom,
+}
+
 pub struct ChunkMeshBuilder {
     pub vertices: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
@@ -147,40 +153,40 @@ pub mod faces {
 
 pub mod uvs {
     pub const UV_Z_FRONT: [[f32; 2]; 4] = [
-        [0.0, 0.0], // Bottom left
-        [0.0, 1.0], // Top left
-        [1.0, 0.0], // Bottom right
-        [1.0, 1.0], // Top right
+        [1.0, 1.0], // Bottom left
+        [1.0, 0.0], // Top left
+        [0.0, 1.0], // Bottom right
+        [0.0, 0.0], // Top right
     ];
     pub const UV_Z_BACK: [[f32; 2]; 4] = [
-        [1.0, 0.0], // Bottom right
-        [1.0, 1.0], // Top right
-        [0.0, 0.0], // Bottom left
-        [0.0, 1.0], // Top left
+        [0.0, 1.0], // Bottom right
+        [0.0, 0.0], // Top right
+        [1.0, 1.0], // Bottom left
+        [1.0, 0.0], // Top left
     ];
     pub const UV_Y_FRONT: [[f32; 2]; 4] = [
-        [0.0, 1.0], // Front left
-        [0.0, 0.0], // Back left
-        [1.0, 1.0], // Front right
-        [1.0, 0.0], // Back right
+        [1.0, 0.0], // Front left
+        [1.0, 1.0], // Back left
+        [0.0, 0.0], // Front right
+        [0.0, 1.0], // Back right
     ];
     pub const UV_Y_BACK: [[f32; 2]; 4] = [
-        [0.0, 0.0], // Front left
-        [0.0, 1.0], // Back left
-        [1.0, 0.0], // Front right
-        [1.0, 1.0], // Back right
+        [1.0, 1.0], // Front left
+        [1.0, 0.0], // Back left
+        [0.0, 1.0], // Front right
+        [0.0, 0.0], // Back right
     ];
     pub const UV_X_FRONT: [[f32; 2]; 4] = [
-        [1.0, 0.0], // Front bottom
-        [1.0, 1.0], // Front top
-        [0.0, 0.0], // Back bottom
-        [0.0, 1.0], // Back top
+        [0.0, 1.0], // Front bottom
+        [0.0, 0.0], // Front top
+        [1.0, 1.0], // Back bottom
+        [1.0, 0.0], // Back top
     ];
     pub const UV_X_BACK: [[f32; 2]; 4] = [
-        [0.0, 0.0], // Front bottom
-        [0.0, 1.0], // Front top
-        [1.0, 0.0], // Back bottom
-        [1.0, 1.0], // Back top
+        [1.0, 1.0], // Front bottom
+        [1.0, 0.0], // Front top
+        [0.0, 1.0], // Back bottom
+        [0.0, 0.0], // Back top
     ];
 }
 
@@ -196,9 +202,10 @@ pub mod normals {
 #[allow(clippy::type_complexity)]
 pub const NEIGHBOR_DATA: [(
     (i32, i32, i32), // Offset
-    [[f32; 3]; 4],   // Vertices for the face
+    [[f32; 3]; 4],   // Geometry
     [[f32; 3]; 4],   // Normals
     [[f32; 2]; 4],   // UV
+    BlockFace,       // block face enum used for texture coords
 ); 6] = [
     // Positive z
     (
@@ -206,6 +213,7 @@ pub const NEIGHBOR_DATA: [(
         faces::FACE_Z_FRONT,
         normals::NORMAL_Z_FRONT,
         uvs::UV_Z_FRONT,
+        BlockFace::Side,
     ),
     // Negative z
     (
@@ -213,6 +221,7 @@ pub const NEIGHBOR_DATA: [(
         faces::FACE_Z_BACK,
         normals::NORMAL_Z_BACK,
         uvs::UV_Z_BACK,
+        BlockFace::Side,
     ),
     // Positive y
     (
@@ -220,6 +229,7 @@ pub const NEIGHBOR_DATA: [(
         faces::FACE_Y_FRONT,
         normals::NORMAL_Y_FRONT,
         uvs::UV_Y_FRONT,
+        BlockFace::Top,
     ),
     // Negative y
     (
@@ -227,6 +237,7 @@ pub const NEIGHBOR_DATA: [(
         faces::FACE_Y_BACK,
         normals::NORMAL_Y_BACK,
         uvs::UV_Y_BACK,
+        BlockFace::Bottom,
     ),
     // Positive x
     (
@@ -234,6 +245,7 @@ pub const NEIGHBOR_DATA: [(
         faces::FACE_X_FRONT,
         normals::NORMAL_X_FRONT,
         uvs::UV_X_FRONT,
+        BlockFace::Side,
     ),
     // Negative x
     (
@@ -241,5 +253,6 @@ pub const NEIGHBOR_DATA: [(
         faces::FACE_X_BACK,
         normals::NORMAL_X_BACK,
         uvs::UV_X_BACK,
+        BlockFace::Side,
     ),
 ];
