@@ -1,4 +1,7 @@
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{
+    prelude::*,
+    utils::{HashMap, HashSet},
+};
 use crossbeam_queue::SegQueue;
 
 use crate::{
@@ -13,11 +16,15 @@ use super::{
     block::registry::{BlockRegistry, TextureAtlasHandle},
     render_distance::RenderDistance,
     world_access::ExcavateManufacturateWorld,
+    CHUNKS_RENDERED_PER_FRAME,
 };
 
 /// The currently spawned chunks.
 #[derive(Resource, Deref, DerefMut)]
 pub struct SpawnedChunks(HashMap<ChunkPos, Entity>);
+
+#[derive(Resource, Deref, DerefMut)]
+pub struct PossiblySpawnedChunks(HashSet<ChunkPos>);
 
 /// Handles to chunks whose meshes have already been created.
 #[derive(Resource, Deref, DerefMut)]
@@ -37,6 +44,7 @@ impl ChunkSpawnQueue {
 
 pub fn setup(mut commands: Commands) {
     commands.insert_resource(SpawnedChunks(HashMap::new()));
+    commands.insert_resource(PossiblySpawnedChunks(HashSet::new()));
     commands.insert_resource(ChunkMeshes(HashMap::new()));
     commands.insert_resource(ChunkSpawnQueue(SegQueue::new()));
 
@@ -49,6 +57,7 @@ pub fn cleanup(
     spawned_chunks: ResMut<SpawnedChunks>,
 ) {
     commands.remove_resource::<SpawnedChunks>();
+    commands.remove_resource::<PossiblySpawnedChunks>();
     commands.remove_resource::<ChunkMeshes>();
     commands.remove_resource::<ChunkSpawnQueue>();
 
@@ -59,9 +68,11 @@ pub fn cleanup(
 
 pub fn populate_chunk_spawn_queue(
     player_query: Query<&ChunkPos, With<Player>>,
+    mut possibly_spawned_chunks: ResMut<PossiblySpawnedChunks>,
     chunk_spawn_queue: Res<ChunkSpawnQueue>,
     render_distance: Res<RenderDistance>,
     spawned_chunks: Res<SpawnedChunks>,
+    em_world: Res<ExcavateManufacturateWorld>,
 ) {
     let player_chunk_pos = *player_query.single();
 
@@ -73,8 +84,16 @@ pub fn populate_chunk_spawn_queue(
             for z_offset in lower..=upper {
                 let chunk_pos = player_chunk_pos + ChunkPos::new(x_offset, y_offset, z_offset);
 
-                if !spawned_chunks.contains_key(&chunk_pos) {
+                let chunk_has_geometry = em_world
+                    .get_chunk(chunk_pos)
+                    .is_some_and(|chunk| !chunk.is_empty());
+
+                if !spawned_chunks.contains_key(&chunk_pos)
+                    && chunk_has_geometry
+                    && !possibly_spawned_chunks.contains(&chunk_pos)
+                {
                     chunk_spawn_queue.push(chunk_pos);
+                    possibly_spawned_chunks.insert(chunk_pos);
                 }
             }
         }
@@ -93,29 +112,23 @@ pub fn spawn_chunks(
     block_registry: Res<BlockRegistry>,
     texture_atlas_handle: Res<TextureAtlasHandle>,
 ) {
-    while let Some(chunk_pos) = chunk_spawn_queue.pop() {
+    for _ in 0..CHUNKS_RENDERED_PER_FRAME {
+        let Some(chunk_pos) = chunk_spawn_queue.pop() else {
+            return;
+        };
+
         let Some(chunk) = em_world.get_chunk(chunk_pos) else {
             // The chunk doesn't exist in the world for some reason
             continue;
         };
 
         if chunk.is_empty() {
+            // Remove mesh data from the stored meshes
+            chunk_meshes.remove(&chunk_pos);
+
             // Don't spawn a chunk with no data in it
             continue;
         }
-
-        // let mesh_handle = if let Some(mesh_handle) = chunk_meshes.get(&chunk_pos) {
-        //     // The mesh already exists, use a weak handle to it to spawn it
-        //     mesh_handle.clone_weak()
-        // } else {
-        //     // The mesh hasn't been created yet, let's create it
-        //     let mesh = chunk.get_mesh(chunk_pos, &block_registry, &em_world);
-        //     let mesh_handle = meshes.add(mesh);
-
-        //     chunk_meshes.insert(chunk_pos, mesh_handle.clone());
-
-        //     mesh_handle
-        // };
 
         let mesh = chunk.get_mesh(chunk_pos, &block_registry, &em_world);
         let mesh_handle = meshes.add(mesh);
@@ -152,6 +165,7 @@ pub fn despawn_chunks(
     player_query: Query<&ChunkPos, With<Player>>,
     render_distance: Res<RenderDistance>,
     mut spawned_chunks: ResMut<SpawnedChunks>,
+    mut possibly_spawned_chunks: ResMut<PossiblySpawnedChunks>,
 ) {
     let player_chunk_pos = *player_query.single();
 
@@ -161,6 +175,7 @@ pub fn despawn_chunks(
         if !render_distance.contains(local_chunk_pos) {
             if let Some(entity) = spawned_chunks.remove(&chunk_pos) {
                 commands.entity(entity).despawn();
+                possibly_spawned_chunks.remove(&chunk_pos);
             }
         }
     }

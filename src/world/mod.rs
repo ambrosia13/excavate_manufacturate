@@ -18,6 +18,8 @@ pub mod worldgen;
 pub const CHUNK_SIZE: usize = 32;
 pub const CHUNK_SIZE_INT: i32 = CHUNK_SIZE as i32;
 
+pub const CHUNKS_RENDERED_PER_FRAME: usize = 5;
+
 pub struct ExcavateManufacturateWorldPlugin;
 
 impl Plugin for ExcavateManufacturateWorldPlugin {
