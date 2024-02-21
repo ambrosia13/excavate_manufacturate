@@ -110,7 +110,7 @@ impl ChunkData {
                         continue;
                     };
 
-                    for ((dx, dy, dz), face, normals, uvs) in util::mesh::NEIGHBOR_DATA {
+                    for ((dx, dy, dz), geometry, normals, uvs, face) in util::mesh::NEIGHBOR_DATA {
                         let neighbor_pos = offset + IVec3::new(dx, dy, dz);
 
                         let neighbor_exists_in_chunk = neighbor_pos.cmpge(IVec3::splat(0)).all()
@@ -138,12 +138,12 @@ impl ChunkData {
                             let static_block_data = block_registry.get_block_data(block_type.id);
 
                             mesh_builder.add_face(
-                                face,
+                                geometry,
                                 normals,
                                 uvs,
                                 offset.as_vec3(),
                                 1.0,
-                                static_block_data.atlas_coordinates,
+                                static_block_data.textures.get_coords(face),
                                 block_registry.atlas_size,
                             );
                         }
