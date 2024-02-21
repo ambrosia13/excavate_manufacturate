@@ -3,7 +3,7 @@ use bevy_rapier3d::prelude::*;
 use rand::Rng;
 
 use crate::{
-    state::{GameState, PlayerGameMode},
+    state::{GameState, PlayerGameMode, PlayingGameState},
     util::{block_pos::BlockPos, chunk_pos::ChunkPos},
 };
 
@@ -26,31 +26,34 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
                 Update,
                 (
                     update_player_pos,
-                    interact::destroy_block,
                     cursor::draw_crosshair,
-                    // Player movement
                     (
+                        interact::destroy_block,
+                        // Player movement
                         (
-                            movement::handle_player_rotation,
-                            // Creative movement, just flight without physics
-                            movement::handle_player_flight
-                                .run_if(in_state(PlayerGameMode::Creative)),
-                            // Survival movement, includes physics
                             (
-                                movement::handle_player_gravity,
-                                movement::handle_player_movement,
-                                movement::apply_player_velocity,
+                                movement::handle_player_rotation,
+                                // Creative movement, just flight without physics
+                                movement::handle_player_flight
+                                    .run_if(in_state(PlayerGameMode::Creative)),
+                                // Survival movement, includes physics
+                                (
+                                    movement::handle_player_gravity,
+                                    movement::handle_player_movement,
+                                    movement::apply_player_velocity,
+                                )
+                                    .chain()
+                                    .run_if(in_state(PlayerGameMode::Survival)),
+                            ),
+                            (
+                                movement::send_physics_translation,
+                                movement::recv_physics_translation_into_player,
                             )
-                                .chain()
-                                .run_if(in_state(PlayerGameMode::Survival)),
-                        ),
-                        (
-                            movement::send_physics_translation,
-                            movement::recv_physics_translation_into_player,
+                                .chain(),
                         )
                             .chain(),
                     )
-                        .chain(),
+                        .run_if(in_state(PlayingGameState::Playing)),
                 )
                     .run_if(in_state(GameState::InGame)),
             )

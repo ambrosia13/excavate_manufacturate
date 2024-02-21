@@ -8,8 +8,15 @@ pub enum GameState {
 }
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
-pub enum PlayerGameMode {
-    Survival,
+pub enum PlayingGameState {
     #[default]
+    Playing,
+    Paused,
+}
+
+#[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
+pub enum PlayerGameMode {
+    #[default]
+    Survival,
     Creative,
 }
