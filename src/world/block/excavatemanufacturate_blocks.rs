@@ -20,35 +20,45 @@ pub mod block_types {
 
 pub mod block_data {
     use crate::world::block::static_block_data::{
-        AtlasCoordinates, BlockHardnessLevel, StaticBlockData,
+        AtlasCoordinates, BlockHardnessLevel, BlockTextures, StaticBlockData,
     };
 
     pub const GRASS: StaticBlockData = StaticBlockData {
-        atlas_coordinates: AtlasCoordinates {
-            min: (0, 0),
-            max: (15, 15),
+        textures: BlockTextures {
+            top: AtlasCoordinates {
+                min: (0, 0),
+                max: (15, 15),
+            },
+            sides: Some(AtlasCoordinates {
+                min: (0, 16),
+                max: (15, 31),
+            }),
+            bottom: Some(AtlasCoordinates {
+                min: (0, 32),
+                max: (15, 47),
+            }),
         },
         hardness: BlockHardnessLevel::Hand,
     };
     pub const DIRT: StaticBlockData = StaticBlockData {
-        atlas_coordinates: AtlasCoordinates {
-            min: (0, 16),
-            max: (15, 31),
-        },
+        textures: BlockTextures::from_single(AtlasCoordinates {
+            min: (0, 32),
+            max: (15, 47),
+        }),
         hardness: BlockHardnessLevel::Hand,
     };
     pub const BEDROCK: StaticBlockData = StaticBlockData {
-        atlas_coordinates: AtlasCoordinates {
+        textures: BlockTextures::from_single(AtlasCoordinates {
             min: (16, 16),
             max: (31, 31),
-        },
+        }),
         hardness: BlockHardnessLevel::Unbreakable,
     };
     pub const STONE: StaticBlockData = StaticBlockData {
-        atlas_coordinates: AtlasCoordinates {
+        textures: BlockTextures::from_single(AtlasCoordinates {
             min: (16, 0),
             max: (31, 15),
-        },
+        }),
         hardness: BlockHardnessLevel::ToolStrength(0),
     };
 }
