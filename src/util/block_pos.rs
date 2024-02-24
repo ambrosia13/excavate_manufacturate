@@ -14,7 +14,7 @@ impl BlockPos {
         Self(IVec3::new(x, y, z))
     }
 
-    pub fn as_chunk_offset(&self) -> BlockPos {
+    pub fn as_chunk_offset(self) -> BlockPos {
         BlockPos::new(
             self.x.rem_euclid(CHUNK_SIZE_INT),
             self.y.rem_euclid(CHUNK_SIZE_INT),
@@ -22,7 +22,7 @@ impl BlockPos {
         )
     }
 
-    pub fn is_on_chunk_border(&self) -> bool {
+    pub fn is_on_chunk_border(self) -> bool {
         self.as_chunk_offset().cmpeq(IVec3::splat(0)).any()
             || self
                 .as_chunk_offset()
@@ -63,7 +63,7 @@ impl BlockPos {
         chunk_positions
     }
 
-    pub fn inner(&self) -> IVec3 {
+    pub fn inner(self) -> IVec3 {
         self.0
     }
 }

@@ -14,7 +14,7 @@ impl ChunkPos {
         Self(IVec3::new(x, y, z))
     }
 
-    pub fn inner(&self) -> IVec3 {
+    pub fn inner(self) -> IVec3 {
         self.0
     }
 }
