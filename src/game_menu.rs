@@ -9,6 +9,7 @@ use crate::{
     state::{GameState, PlayerGameMode},
     util::block_pos::BlockPos,
     world::{
+        generation::{GeneratedChunkTask, PossiblyGeneratedChunks},
         render::{ChunkSpawnQueue, SpawnedChunks},
         render_distance::RenderDistance,
         world_access::ExcavateManufacturateWorld,
@@ -66,6 +67,7 @@ fn performance_metrics_system(
     em_world: Res<ExcavateManufacturateWorld>,
     spawn_queue: Res<ChunkSpawnQueue>,
     entity_query: Query<()>,
+    tasks_query: Query<(), With<GeneratedChunkTask>>,
 ) {
     egui::Window::new("Performance Metrics").show(contexts.ctx_mut(), |ui| {
         if let Some(fps) = diagnostics
@@ -77,6 +79,7 @@ fn performance_metrics_system(
 
         ui.label(format!("Entity count: {}", entity_query.iter().count()));
         ui.label(format!("Chunks stored: {}", em_world.total_chunk_count()));
+        ui.label(format!("Chunk gen tasks: {}", tasks_query.iter().count()));
         ui.label(format!("Chunks rendered: {}", spawned_chunks.len()));
         ui.label(format!("Chunks queued to render: {}", spawn_queue.len()));
     });
