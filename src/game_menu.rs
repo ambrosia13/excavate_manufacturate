@@ -9,7 +9,7 @@ use crate::{
     state::{GameState, PlayerGameMode},
     util::block_pos::BlockPos,
     world::{
-        generation::{GeneratedChunkTask, PossiblyGeneratedChunks},
+        generation::{GeneratedChunkTask},
         render::{ChunkSpawnQueue, SpawnedChunks},
         render_distance::RenderDistance,
         world_access::ExcavateManufacturateWorld,
