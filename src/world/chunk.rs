@@ -20,7 +20,10 @@ impl ChunkData {
         }
     }
 
-    pub fn with_data<F: FnMut(BlockPos) -> BlockData>(mut supplier: F) -> Self {
+    pub fn with_data<F>(mut supplier: F) -> Self
+    where
+        F: FnMut(BlockPos) -> BlockData,
+    {
         let mut num_blocks = 0;
 
         let blocks = (0..(CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE))
@@ -118,9 +121,9 @@ impl ChunkData {
                             self.try_get_from_raw_offset(neighbor_pos)
                                 .is_some_and(|block_data| block_data.is_none())
                         } else {
-                            let neighbor_pos = offset + IVec3::new(dx, dy, dz);
-                            let world_neighbor_pos =
-                                BlockPos::from(chunk_pos) + BlockPos::from(neighbor_pos);
+                            let world_neighbor_pos = BlockPos::from(chunk_pos)
+                                + BlockPos::from(offset)
+                                + BlockPos::new(dx, dy, dz);
 
                             // Access the world data structure for occlusion test
                             // Equivalent to, like, an Option::is_none_or() if it actually existed
