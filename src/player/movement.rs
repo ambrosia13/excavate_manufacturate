@@ -1,7 +1,7 @@
 use bevy::{input::mouse::MouseMotion, prelude::*, window::PrimaryWindow};
 use bevy_rapier3d::control::{KinematicCharacterController, KinematicCharacterControllerOutput};
 
-use super::{keybinds::PlayerKeybinds, Player, PlayerPhysics, PlayerVelocity};
+use super::{keybinds::PlayerKeybinds, MobVelocity, Player, PlayerPhysics, ReferenceToMob};
 
 pub fn handle_player_flight(
     player_query: Query<&Transform, With<Player>>,
@@ -53,7 +53,7 @@ pub fn handle_player_movement(
     player_query: Query<&Transform, With<Player>>,
     mut physics_query: Query<
         (
-            &mut PlayerVelocity,
+            &mut MobVelocity,
             Option<&KinematicCharacterControllerOutput>,
         ),
         With<PlayerPhysics>,
@@ -139,46 +139,43 @@ pub fn handle_player_rotation(
         Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
 }
 
-pub fn handle_player_gravity(
-    mut physics_query: Query<
-        (
-            &mut PlayerVelocity,
-            Option<&KinematicCharacterControllerOutput>,
-        ),
-        With<PlayerPhysics>,
-    >,
+pub fn apply_mob_gravity(
+    mut physics_query: Query<(
+        &mut MobVelocity,
+        Option<&KinematicCharacterControllerOutput>,
+    )>,
     time: Res<Time>,
 ) {
-    let (mut velocity, Some(output)) = physics_query.single_mut() else {
-        info!("Kinematic character controller output doesn't exist, skipping gravity update");
-        return;
-    };
+    let velocity_change = -0.1 * time.delta_seconds();
 
-    let velocity_change = -0.1;
+    for (mut velocity, output) in physics_query.iter_mut() {
+        let Some(output) = output else {
+            info!("Kinematic character controller output doesn't exist, skipping gravity update");
+            continue;
+        };
 
-    if output.grounded {
-        velocity.y = 0.0;
-    } else {
-        velocity.y += velocity_change * time.delta_seconds();
+        if output.grounded {
+            velocity.y = 0.0;
+        } else {
+            velocity.y += velocity_change;
+        }
     }
 }
 
-pub fn apply_player_velocity(
-    mut physics_query: Query<
-        (&PlayerVelocity, &mut KinematicCharacterController),
-        With<PlayerPhysics>,
-    >,
+pub fn apply_mob_velocity(
+    mut physics_query: Query<(&MobVelocity, &mut KinematicCharacterController)>,
 ) {
-    let (PlayerVelocity(velocity), mut controller) = physics_query.single_mut();
-
     let terminal_velocity = 1.0;
-    let velocity = velocity.clamp_length_max(terminal_velocity);
 
-    controller.translation = if let Some(translation) = controller.translation {
-        Some(velocity + translation)
-    } else {
-        Some(velocity)
-    };
+    for (MobVelocity(velocity), mut controller) in physics_query.iter_mut() {
+        let velocity = velocity.clamp_length_max(terminal_velocity);
+
+        controller.translation = if let Some(translation) = controller.translation {
+            Some(velocity + translation)
+        } else {
+            Some(velocity)
+        };
+    }
 }
 
 #[derive(Event)]
@@ -200,5 +197,37 @@ pub fn recv_physics_translation_into_player(
 
     for PlayerTransformCopyEvent(translation) in events.read() {
         player_transform.translation = *translation + Vec3::new(0.0, 0.8, 0.0);
+    }
+}
+
+#[allow(clippy::type_complexity)]
+/// Copies the physics transform's translation onto the corresponding mob transform's translation.
+pub fn copy_mob_physics(
+    mut set: ParamSet<(
+        // Mob transform query
+        Query<(&mut Transform, Has<Player>)>,
+        // Mob physics query
+        Query<(&Transform, &ReferenceToMob), With<KinematicCharacterController>>,
+    )>,
+) {
+    let mut to_copy = Vec::new();
+
+    for (transform, ReferenceToMob(entity)) in set.p1().iter() {
+        to_copy.push((transform.translation, *entity));
+    }
+
+    let mut transform_query = set.p0();
+
+    for (translation, entity) in to_copy {
+        let Ok((mut transform, is_player)) = transform_query.get_mut(entity) else {
+            warn!("Physics to mob reference is invalid!");
+            return;
+        };
+
+        transform.translation = translation;
+
+        if is_player {
+            transform.translation += Vec3::new(0.0, 0.8, 0.0);
+        }
     }
 }

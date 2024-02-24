@@ -38,9 +38,9 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
                                     .run_if(in_state(PlayerGameMode::Creative)),
                                 // Survival movement, includes physics
                                 (
-                                    movement::handle_player_gravity,
+                                    movement::apply_mob_gravity,
                                     movement::handle_player_movement,
-                                    movement::apply_player_velocity,
+                                    movement::apply_mob_velocity,
                                 )
                                     .chain()
                                     .run_if(in_state(PlayerGameMode::Survival)),
@@ -48,6 +48,7 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
                             (
                                 movement::send_physics_translation,
                                 movement::recv_physics_translation_into_player,
+                                movement::copy_mob_physics,
                             )
                                 .chain(),
                         )
@@ -67,8 +68,14 @@ pub struct Player;
 #[derive(Component)]
 pub struct PlayerPhysics;
 
+#[derive(Component)]
+pub struct Mob;
+
+#[derive(Component)]
+pub struct ReferenceToMob(pub Entity);
+
 #[derive(Component, Deref, DerefMut)]
-pub struct PlayerVelocity(pub Vec3);
+pub struct MobVelocity(pub Vec3);
 
 fn setup(mut commands: Commands) {
     let x = rand::thread_rng().gen_range(-2000..=2000);
@@ -79,15 +86,18 @@ fn setup(mut commands: Commands) {
 
     let player_transform = Transform::from_translation(player_block_pos.as_vec3());
 
-    commands.spawn((
-        Player,
-        Camera3dBundle {
-            transform: player_transform,
-            ..Default::default()
-        },
-        player_chunk_pos,
-        player_block_pos,
-    ));
+    let player_entity = commands
+        .spawn((
+            Player,
+            Mob,
+            Camera3dBundle {
+                transform: player_transform,
+                ..Default::default()
+            },
+            player_chunk_pos,
+            player_block_pos,
+        ))
+        .id();
 
     commands.spawn((
         PlayerPhysics,
@@ -98,7 +108,9 @@ fn setup(mut commands: Commands) {
             local: player_transform,
             ..Default::default()
         },
-        PlayerVelocity(Vec3::ZERO),
+        // The player physics entity has a reference to the player entity
+        ReferenceToMob(player_entity),
+        MobVelocity(Vec3::ZERO),
     ));
 
     info!("Set up player");
