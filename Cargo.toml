@@ -14,12 +14,12 @@ opt-level = 3
 opt-level = 1
 
 [dependencies]
-bevy = { version = "0.12.1", features = ["dynamic_linking"] }
-bevy_egui = "0.24.0"
-bevy_rapier3d = { version = "0.24.0", features = ["debug-render-3d"] }
+bevy = { version = "0.13.0", features = ["dynamic_linking"] }
+bevy_egui = "0.25.0"
+bevy_rapier3d = { version = "0.25.0", features = ["debug-render-3d"] }
 crossbeam-queue = "0.3.11"
 futures-lite = "2.2.0"
 image = "0.24.8"
-noisy_bevy = "0.5.0"
+noisy_bevy = "0.6.0"
 rand = "0.8.5"
 rayon = "1.8.1"

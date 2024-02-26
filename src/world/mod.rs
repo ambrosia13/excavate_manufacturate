@@ -95,7 +95,7 @@ fn setup_light(mut commands: Commands) {
         cascade_shadow_config: CascadeShadowConfigBuilder {
             num_cascades: 4,
             minimum_distance: 0.01,
-            maximum_distance: 32.0 * CHUNK_SIZE as f32,
+            maximum_distance: 4.0 * CHUNK_SIZE as f32,
             first_cascade_far_bound: 10.0,
             overlap_proportion: 0.01,
         }

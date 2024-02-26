@@ -48,7 +48,10 @@ pub fn toggle_cursor_enabled(mut window_query: Query<&mut Window, With<PrimaryWi
     }
 }
 
-pub fn pause_game(mut next_state: ResMut<NextState<PlayingGameState>>, input: Res<Input<KeyCode>>) {
+pub fn pause_game(
+    mut next_state: ResMut<NextState<PlayingGameState>>,
+    input: Res<ButtonInput<KeyCode>>,
+) {
     if input.just_pressed(KeyCode::Escape) {
         next_state.set(PlayingGameState::Paused);
     }
@@ -56,15 +59,18 @@ pub fn pause_game(mut next_state: ResMut<NextState<PlayingGameState>>, input: Re
 
 pub fn unpause_game(
     mut next_state: ResMut<NextState<PlayingGameState>>,
-    input: Res<Input<KeyCode>>,
+    input: Res<ButtonInput<KeyCode>>,
 ) {
     if input.just_pressed(KeyCode::Escape) {
         next_state.set(PlayingGameState::Playing);
     }
 }
 
-pub fn exit_to_menu(mut next_state: ResMut<NextState<GameState>>, input: Res<Input<KeyCode>>) {
-    if input.just_pressed(KeyCode::Back) {
+pub fn exit_to_menu(
+    mut next_state: ResMut<NextState<GameState>>,
+    input: Res<ButtonInput<KeyCode>>,
+) {
+    if input.just_pressed(KeyCode::Backspace) {
         next_state.set(GameState::Menu);
     }
 }

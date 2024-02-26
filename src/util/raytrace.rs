@@ -1,15 +1,15 @@
-use bevy::math::{IVec3, Vec3A};
+use bevy::math::{IVec3, Vec3};
 
 // (position, normal)
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Hit {
-    pub position: Vec3A,
-    pub normal: Vec3A,
+    pub position: Vec3,
+    pub normal: Vec3,
 }
 
 pub fn raytrace_dda<F>(
-    ray_pos: Vec3A,
-    ray_dir: Vec3A,
+    ray_pos: Vec3,
+    ray_dir: Vec3,
     raytrace_length: i32,
     mut hit_evaluator: F,
 ) -> Option<Hit>
@@ -17,8 +17,8 @@ where
     F: FnMut(IVec3) -> bool,
 {
     let mut hit = Hit {
-        position: Vec3A::ZERO,
-        normal: Vec3A::ZERO,
+        position: Vec3::ZERO,
+        normal: Vec3::ZERO,
     };
 
     let step_sizes = 1.0 / ray_dir.abs();
@@ -33,7 +33,7 @@ where
 
         current_pos += ray_dir * closest_dist;
 
-        let step_axis = Vec3A::new(
+        let step_axis = Vec3::new(
             if next_dist.x <= closest_dist {
                 1.0
             } else {

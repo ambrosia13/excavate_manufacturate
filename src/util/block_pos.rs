@@ -10,7 +10,7 @@ use super::chunk_pos::ChunkPos;
 pub struct BlockPos(IVec3);
 
 impl BlockPos {
-    pub fn new(x: i32, y: i32, z: i32) -> Self {
+    pub const fn new(x: i32, y: i32, z: i32) -> Self {
         Self(IVec3::new(x, y, z))
     }
 
@@ -76,7 +76,7 @@ impl From<IVec3> for BlockPos {
 
 impl From<Vec3> for BlockPos {
     fn from(value: Vec3) -> Self {
-        Self::from(value.floor().as_ivec3())
+        Self::from(value.floor().as_ivec3()) + Self::new(1, 1, 1)
     }
 }
 

@@ -9,7 +9,7 @@ use crate::{
     state::{GameState, PlayerGameMode},
     util::block_pos::BlockPos,
     world::{
-        generation::{GeneratedChunkTask},
+        generation::GeneratedChunkTask,
         render::{ChunkSpawnQueue, SpawnedChunks},
         render_distance::RenderDistance,
         world_access::ExcavateManufacturateWorld,
@@ -71,7 +71,7 @@ fn performance_metrics_system(
 ) {
     egui::Window::new("Performance Metrics").show(contexts.ctx_mut(), |ui| {
         if let Some(fps) = diagnostics
-            .get(FrameTimeDiagnosticsPlugin::FPS)
+            .get(&FrameTimeDiagnosticsPlugin::FPS)
             .and_then(|fps| fps.value())
         {
             ui.label(format!("Fps: {:.3}", fps));

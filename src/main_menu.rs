@@ -16,7 +16,7 @@ fn main_menu_system(
     mut next_state: ResMut<NextState<GameState>>,
     mut app_exit_events: EventWriter<AppExit>,
     mut render_distance: ResMut<RenderDistance>,
-    input: Res<Input<KeyCode>>,
+    input: Res<ButtonInput<KeyCode>>,
 ) {
     egui::Window::new("Main Menu").show(contexts.ctx_mut(), |ui| {
         if ui.button("Start").clicked() || input.just_pressed(KeyCode::Space) {
@@ -28,7 +28,7 @@ fn main_menu_system(
 
         render_distance.set_to(render_distance_chunks as usize);
 
-        if ui.button("Exit").clicked() || input.just_pressed(KeyCode::Back) {
+        if ui.button("Exit").clicked() || input.just_pressed(KeyCode::Backspace) {
             app_exit_events.send(AppExit);
         }
     });

@@ -20,10 +20,10 @@ impl Default for PlayerKeybinds {
         use KeyCode::*;
 
         Self {
-            forward: W,
-            back: S,
-            left: A,
-            right: D,
+            forward: KeyW,
+            back: KeyS,
+            left: KeyA,
+            right: KeyD,
             up: Space,
             down: ShiftLeft,
             break_block: MouseButton::Left,

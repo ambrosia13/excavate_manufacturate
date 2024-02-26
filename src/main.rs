@@ -11,9 +11,9 @@ mod world;
 
 fn main() {
     App::new()
-        .add_state::<GameState>()
-        .add_state::<PlayingGameState>()
-        .add_state::<PlayerGameMode>()
+        .init_state::<GameState>()
+        .init_state::<PlayingGameState>()
+        .init_state::<PlayerGameMode>()
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {

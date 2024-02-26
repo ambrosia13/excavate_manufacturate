@@ -1,4 +1,4 @@
-use bevy::{prelude::*, utils::HashMap};
+use bevy::{prelude::*, render::render_asset::RenderAssetUsages, utils::HashMap};
 
 use super::{excavatemanufacturate_blocks, static_block_data::StaticBlockData, BlockId};
 
@@ -33,7 +33,8 @@ pub fn setup_block_registry(mut commands: Commands, mut assets: ResMut<Assets<Im
         atlas_dynamic_image.height() as usize,
     );
 
-    let atlas_image = Image::from_dynamic(atlas_dynamic_image, true);
+    let atlas_image =
+        Image::from_dynamic(atlas_dynamic_image, true, RenderAssetUsages::RENDER_WORLD);
     commands.insert_resource(TextureAtlasHandle(assets.add(atlas_image)));
 
     let mut block_registry = BlockRegistry {

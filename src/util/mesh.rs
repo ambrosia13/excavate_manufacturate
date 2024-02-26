@@ -1,6 +1,6 @@
 use bevy::{
     prelude::*,
-    render::{mesh::Indices, render_resource::PrimitiveTopology},
+    render::{mesh::Indices, render_asset::RenderAssetUsages, render_resource::PrimitiveTopology},
 };
 
 use crate::world::block::static_block_data::AtlasCoordinates;
@@ -100,13 +100,13 @@ impl ChunkMeshBuilder {
 
     #[allow(clippy::wrong_self_convention)]
     pub fn as_mesh(self) -> Mesh {
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::all());
 
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices);
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals);
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, self.uvs);
 
-        mesh.set_indices(Some(Indices::U32(self.indices)));
+        mesh.insert_indices(Indices::U32(self.indices));
 
         mesh
     }

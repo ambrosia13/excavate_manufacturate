@@ -13,6 +13,7 @@ pub mod cursor;
 pub mod interact;
 pub mod keybinds;
 pub mod movement;
+pub mod physics;
 
 pub struct ExavateManufacturatePlayerPlugin;
 
@@ -28,7 +29,11 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
                     update_player_pos,
                     cursor::draw_crosshair,
                     (
-                        interact::destroy_block,
+                        // interact::destroy_block,
+                        interact::raycast
+                            .pipe(interact::draw_crosshair)
+                            .pipe(interact::handle_destroy_block)
+                            .pipe(interact::finish_interaction),
                         // Player movement
                         (
                             (
@@ -36,21 +41,16 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
                                 // Creative movement, just flight without physics
                                 movement::handle_player_flight
                                     .run_if(in_state(PlayerGameMode::Creative)),
-                                // Survival movement, includes physics
+                                // Survival movement, includes physics & gravity
                                 (
                                     movement::apply_mob_gravity,
-                                    movement::handle_player_movement,
                                     movement::apply_mob_velocity,
+                                    movement::handle_player_movement,
                                 )
                                     .chain()
                                     .run_if(in_state(PlayerGameMode::Survival)),
                             ),
-                            (
-                                movement::send_physics_translation,
-                                movement::recv_physics_translation_into_player,
-                                movement::copy_mob_physics,
-                            )
-                                .chain(),
+                            movement::copy_mob_physics,
                         )
                             .chain(),
                     )

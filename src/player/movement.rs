@@ -7,7 +7,7 @@ pub fn handle_player_flight(
     player_query: Query<&Transform, With<Player>>,
     mut player_physics_query: Query<&mut KinematicCharacterController, With<PlayerPhysics>>,
     player_keybinds: Res<PlayerKeybinds>,
-    input: Res<Input<KeyCode>>,
+    input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
 ) {
     let transform = player_query.single();
@@ -27,10 +27,10 @@ pub fn handle_player_flight(
     }
 
     if input.pressed(player_keybinds.left) {
-        player_movement += transform.left();
+        player_movement += Vec3::from(transform.left());
     }
     if input.pressed(player_keybinds.right) {
-        player_movement += transform.right();
+        player_movement += Vec3::from(transform.right());
     }
     if input.pressed(player_keybinds.forward) {
         player_movement += forward;
@@ -60,7 +60,7 @@ pub fn handle_player_movement(
     >,
     time: Res<Time>,
     player_keybinds: Res<PlayerKeybinds>,
-    input: Res<Input<KeyCode>>,
+    input: Res<ButtonInput<KeyCode>>,
 ) {
     let (mut velocity, Some(output)) = physics_query.single_mut() else {
         return;
@@ -82,10 +82,10 @@ pub fn handle_player_movement(
     }
 
     if input.pressed(player_keybinds.left) {
-        player_movement += transform.left();
+        player_movement += Vec3::from(transform.left());
     }
     if input.pressed(player_keybinds.right) {
-        player_movement += transform.right();
+        player_movement += Vec3::from(transform.right());
     }
     if input.pressed(player_keybinds.forward) {
         player_movement += forward;
