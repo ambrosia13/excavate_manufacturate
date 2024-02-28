@@ -16,7 +16,7 @@ pub enum PlayingGameState {
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 pub enum PlayerGameMode {
-    #[default]
     Survival,
+    #[default]
     Creative,
 }
