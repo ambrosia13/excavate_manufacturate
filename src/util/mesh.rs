@@ -100,7 +100,10 @@ impl ChunkMeshBuilder {
 
     #[allow(clippy::wrong_self_convention)]
     pub fn as_mesh(self) -> Mesh {
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::all());
+        let mut mesh = Mesh::new(
+            PrimitiveTopology::TriangleList,
+            RenderAssetUsages::RENDER_WORLD,
+        );
 
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, self.vertices);
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, self.normals);
