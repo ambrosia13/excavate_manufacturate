@@ -65,13 +65,13 @@ impl ChunkMeshBuilder {
         normals: [[f32; 3]; 4],
         mut uvs: [[f32; 2]; 4],
         offset: Vec3,
-        scale_factor: f32,
+        vertex_scale: f32,
         atlas_coords: AtlasCoordinates,
         atlas_size: (usize, usize),
     ) {
         for vertex in face.iter_mut() {
             for index in 0..3 {
-                vertex[index] *= scale_factor;
+                vertex[index] *= vertex_scale;
                 vertex[index] += offset[index];
             }
         }
@@ -80,12 +80,12 @@ impl ChunkMeshBuilder {
 
         let starting_index = self.vertices.len();
 
-        self.vertices.extend_from_slice(&face);
-        self.normals.extend_from_slice(&normals);
-        self.uvs.extend_from_slice(&uvs);
+        self.vertices.extend(face);
+        self.normals.extend(normals);
+        self.uvs.extend(uvs);
 
         self.indices
-            .extend_from_slice(&Self::get_face_indices(starting_index as u32));
+            .extend(Self::get_face_indices(starting_index as u32));
     }
 
     pub fn into_mesh(self) -> Mesh {
