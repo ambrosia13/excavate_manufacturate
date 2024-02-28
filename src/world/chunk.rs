@@ -150,6 +150,6 @@ impl ChunkData {
             }
         }
 
-        mesh_builder.as_mesh()
+        mesh_builder.into_mesh()
     }
 }
