@@ -151,17 +151,3 @@ pub fn poll_generated_chunks(
         }
     }
 }
-
-pub fn debug_num_chunks_in_world(
-    input: Res<ButtonInput<KeyCode>>,
-    em_world: Res<ExcavateManufacturateWorld>,
-) {
-    if !input.just_pressed(KeyCode::Backslash) {
-        return;
-    }
-
-    info!(
-        "Number of chunks stored in the world: {}",
-        em_world.total_chunk_count()
-    );
-}

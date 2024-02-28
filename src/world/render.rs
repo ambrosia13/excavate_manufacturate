@@ -2,6 +2,10 @@ use bevy::{
     prelude::*,
     utils::{HashMap, HashSet},
 };
+use bevy_rapier3d::{
+    dynamics::RigidBody,
+    geometry::{Collider, ColliderDisabled},
+};
 use crossbeam_queue::SegQueue;
 
 use crate::{
@@ -16,7 +20,7 @@ use super::{
     block::registry::{BlockRegistry, TextureAtlasHandle},
     render_distance::RenderDistance,
     world_access::ExcavateManufacturateWorld,
-    CHUNKS_RENDERED_PER_FRAME,
+    NUM_CHUNKS_RENDERED_PER_FRAME,
 };
 
 /// The currently spawned chunks.
@@ -101,7 +105,7 @@ pub fn populate_chunk_spawn_queue(
 }
 
 #[allow(clippy::too_many_arguments)]
-pub fn spawn_chunks(
+pub fn spawn_chunks<const COUNT: usize>(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -112,7 +116,7 @@ pub fn spawn_chunks(
     block_registry: Res<BlockRegistry>,
     texture_atlas_handle: Res<TextureAtlasHandle>,
 ) {
-    for _ in 0..CHUNKS_RENDERED_PER_FRAME {
+    for _ in 0..COUNT {
         let Some(chunk_pos) = chunk_spawn_queue.pop() else {
             return;
         };
@@ -131,6 +135,13 @@ pub fn spawn_chunks(
         }
 
         let mesh = chunk.get_mesh(chunk_pos, &block_registry, &em_world);
+
+        let collider = Collider::from_bevy_mesh(
+            &mesh,
+            &bevy_rapier3d::geometry::ComputedColliderShape::TriMesh,
+        )
+        .expect("Chunk mesh should be able to be converted into a collider");
+
         let mesh_handle = meshes.add(mesh);
 
         chunk_meshes.insert(chunk_pos, mesh_handle.clone_weak());
@@ -151,6 +162,8 @@ pub fn spawn_chunks(
                 },
                 chunk_pos,
             ))
+            // Physics components
+            .insert((collider, RigidBody::Fixed, ColliderDisabled))
             .id();
 
         if let Some(old_chunk) = spawned_chunks.insert(chunk_pos, entity) {

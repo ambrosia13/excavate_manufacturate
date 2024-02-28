@@ -18,7 +18,7 @@ pub mod worldgen;
 pub const CHUNK_SIZE: usize = 32;
 pub const CHUNK_SIZE_INT: i32 = CHUNK_SIZE as i32;
 
-pub const CHUNKS_RENDERED_PER_FRAME: usize = 1;
+pub const NUM_CHUNKS_RENDERED_PER_FRAME: usize = 1;
 
 pub struct ExcavateManufacturateWorldPlugin;
 
@@ -52,14 +52,16 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
                 // generation::generate_chunks,
                 render::populate_chunk_spawn_queue,
                 (
-                    (render::spawn_chunks, render::despawn_chunks),
+                    (
+                        render::spawn_chunks::<NUM_CHUNKS_RENDERED_PER_FRAME>,
+                        render::despawn_chunks,
+                    ),
                     (
                         collider::insert_collider_on_player_chunk_pos,
                         collider::remove_collider_on_faraway_chunks,
                     ),
                 )
                     .chain(),
-                generation::debug_num_chunks_in_world,
             )
                 .run_if(in_state(GameState::InGame)),
         )
@@ -80,7 +82,7 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
 fn setup_light(mut commands: Commands) {
     commands.insert_resource(AmbientLight {
         color: Color::WHITE,
-        brightness: 0.5,
+        brightness: light_consts::lux::OVERCAST_DAY,
     });
 
     commands.insert_resource(DirectionalLightShadowMap { size: 1024 });
@@ -88,7 +90,7 @@ fn setup_light(mut commands: Commands) {
     commands.spawn(DirectionalLightBundle {
         directional_light: DirectionalLight {
             color: Color::WHITE,
-            illuminance: 32000.0,
+            illuminance: light_consts::lux::AMBIENT_DAYLIGHT,
             shadows_enabled: false,
             ..Default::default()
         },
