@@ -20,7 +20,6 @@ use super::{
     block::registry::{BlockRegistry, TextureAtlasHandle},
     render_distance::RenderDistance,
     world_access::ExcavateManufacturateWorld,
-    NUM_CHUNKS_RENDERED_PER_FRAME,
 };
 
 /// The currently spawned chunks.

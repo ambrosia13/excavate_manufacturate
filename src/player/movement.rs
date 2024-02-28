@@ -178,28 +178,6 @@ pub fn apply_mob_velocity(
     }
 }
 
-#[derive(Event)]
-pub struct PlayerTransformCopyEvent(Vec3);
-
-pub fn send_physics_translation(
-    physics_query: Query<&Transform, With<PlayerPhysics>>,
-    mut events: EventWriter<PlayerTransformCopyEvent>,
-) {
-    let translation = physics_query.single().translation;
-    events.send(PlayerTransformCopyEvent(translation));
-}
-
-pub fn recv_physics_translation_into_player(
-    mut player_query: Query<&mut Transform, With<Player>>,
-    mut events: EventReader<PlayerTransformCopyEvent>,
-) {
-    let mut player_transform = player_query.single_mut();
-
-    for PlayerTransformCopyEvent(translation) in events.read() {
-        player_transform.translation = *translation + Vec3::new(0.0, 0.8, 0.0);
-    }
-}
-
 #[allow(clippy::type_complexity)]
 /// Copies the physics transform's translation onto the corresponding mob transform's translation.
 pub fn copy_mob_physics(

@@ -1,15 +1,12 @@
 use bevy::prelude::*;
-use bevy_rapier3d::{
-    dynamics::RigidBody,
-    geometry::{Collider, ColliderDisabled},
-};
+use bevy_rapier3d::geometry::{Collider, ColliderDisabled};
 
 use crate::{
     player::Player,
     util::{block_pos::BlockPos, chunk_pos::ChunkPos},
 };
 
-use super::render::{ChunkMeshes, SpawnedChunks};
+use super::render::SpawnedChunks;
 
 #[allow(clippy::type_complexity)]
 pub fn insert_collider_on_player_chunk_pos(
@@ -17,8 +14,6 @@ pub fn insert_collider_on_player_chunk_pos(
     player_query: Query<&BlockPos, With<Player>>,
     collider_query: Query<Entity, (With<ChunkPos>, With<Collider>, Without<ColliderDisabled>)>,
     spawned_chunks: Res<SpawnedChunks>,
-    // chunk_meshes: Res<ChunkMeshes>,
-    // meshes: Res<Assets<Mesh>>,
 ) {
     let player_block_pos = *player_query.single();
 
@@ -30,21 +25,8 @@ pub fn insert_collider_on_player_chunk_pos(
             if collider_query.contains(chunk_entity) {
                 continue;
             }
-        }
 
-        // if let Some(collider) = chunk_meshes
-        //     .get(&chunk_pos)
-        //     .and_then(|handle| meshes.get(handle))
-        //     .and_then(|mesh| {
-        //         Collider::from_bevy_mesh(
-        //             mesh,
-        //             &bevy_rapier3d::geometry::ComputedColliderShape::TriMesh,
-        //         )
-        //     })
-        // {}
-
-        if let Some(entity) = spawned_chunks.get(&chunk_pos) {
-            if let Some(mut entity_commands) = commands.get_entity(*entity) {
+            if let Some(mut entity_commands) = commands.get_entity(chunk_entity) {
                 entity_commands.remove::<ColliderDisabled>();
             } else {
                 warn!("Entity at chunk position {:?} doesn't exist", chunk_pos);

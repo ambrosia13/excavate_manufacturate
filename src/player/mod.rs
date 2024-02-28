@@ -7,8 +7,6 @@ use crate::{
     util::{block_pos::BlockPos, chunk_pos::ChunkPos},
 };
 
-use self::movement::PlayerTransformCopyEvent;
-
 pub mod cursor;
 pub mod interact;
 pub mod keybinds;
@@ -19,8 +17,7 @@ pub struct ExavateManufacturatePlayerPlugin;
 
 impl Plugin for ExavateManufacturatePlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<PlayerTransformCopyEvent>()
-            .add_systems(Startup, keybinds::setup_player_keybinds)
+        app.add_systems(Startup, keybinds::setup_player_keybinds)
             .add_systems(OnEnter(GameState::InGame), setup)
             .add_systems(OnExit(GameState::InGame), cleanup)
             .add_systems(
