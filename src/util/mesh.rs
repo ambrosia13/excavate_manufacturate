@@ -69,11 +69,10 @@ impl ChunkMeshBuilder {
         atlas_coords: AtlasCoordinates,
         atlas_size: (usize, usize),
     ) {
-        #[allow(clippy::needless_range_loop)]
-        for i in 0..4 {
-            for j in 0..3 {
-                face[i][j] *= scale_factor;
-                face[i][j] += offset[j];
+        for vertex in face.iter_mut() {
+            for index in 0..3 {
+                vertex[index] *= scale_factor;
+                vertex[index] += offset[index];
             }
         }
 
