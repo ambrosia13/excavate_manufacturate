@@ -7,7 +7,6 @@ use crate::{
     util::{block_pos::BlockPos, chunk_pos::ChunkPos},
 };
 
-pub mod cursor;
 pub mod interact;
 pub mod keybinds;
 pub mod movement;
