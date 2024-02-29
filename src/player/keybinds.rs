@@ -32,6 +32,6 @@ impl Default for PlayerKeybinds {
     }
 }
 
-pub fn setup_player_keybinds(mut commands: Commands) {
+pub fn setup(mut commands: Commands) {
     commands.init_resource::<PlayerKeybinds>();
 }
