@@ -17,40 +17,41 @@ pub struct ExavateManufacturatePlayerPlugin;
 
 impl Plugin for ExavateManufacturatePlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, keybinds::setup_player_keybinds)
-            .add_systems(OnEnter(GameState::InGame), setup)
-            .add_systems(OnExit(GameState::InGame), cleanup)
+        let setup_systems = (setup, interact::setup);
+        let cleanup_systems = (cleanup, interact::cleanup);
+
+        let interaction_systems = (
+            interact::raycast,
+            (interact::draw_crosshair, interact::handle_destroy_block),
+        )
+            .chain();
+
+        let player_movement_systems = (
+            (
+                movement::handle_player_rotation,
+                // Creative movement, just flight without physics
+                movement::handle_player_flight.run_if(in_state(PlayerGameMode::Creative)),
+                // Survival movement, includes physics & gravity
+                (
+                    movement::apply_mob_gravity,
+                    movement::apply_mob_velocity,
+                    movement::handle_player_movement,
+                )
+                    .chain()
+                    .run_if(in_state(PlayerGameMode::Survival)),
+            ),
+            movement::copy_mob_physics,
+        )
+            .chain();
+
+        app.add_systems(Startup, keybinds::setup)
+            .add_systems(OnEnter(GameState::InGame), setup_systems)
+            .add_systems(OnExit(GameState::InGame), cleanup_systems)
             .add_systems(
                 Update,
                 (
                     update_player_pos,
-                    cursor::draw_crosshair,
-                    (
-                        // interact::destroy_block,
-                        interact::raycast
-                            .pipe(interact::draw_crosshair)
-                            .pipe(interact::handle_destroy_block)
-                            .pipe(interact::finish_interaction),
-                        // Player movement
-                        (
-                            (
-                                movement::handle_player_rotation,
-                                // Creative movement, just flight without physics
-                                movement::handle_player_flight
-                                    .run_if(in_state(PlayerGameMode::Creative)),
-                                // Survival movement, includes physics & gravity
-                                (
-                                    movement::apply_mob_gravity,
-                                    movement::apply_mob_velocity,
-                                    movement::handle_player_movement,
-                                )
-                                    .chain()
-                                    .run_if(in_state(PlayerGameMode::Survival)),
-                            ),
-                            movement::copy_mob_physics,
-                        )
-                            .chain(),
-                    )
+                    (interaction_systems, player_movement_systems)
                         .run_if(in_state(PlayingGameState::Playing)),
                 )
                     .run_if(in_state(GameState::InGame)),

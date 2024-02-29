@@ -11,13 +11,25 @@ use crate::{
 
 use super::{keybinds::PlayerKeybinds, Player};
 
+#[derive(Resource, Deref)]
+pub struct PlayerRaycast(pub Option<Hit>);
+
+pub fn setup(mut commands: Commands) {
+    commands.insert_resource(PlayerRaycast(None));
+}
+
+pub fn cleanup(mut commands: Commands) {
+    commands.remove_resource::<PlayerRaycast>();
+}
+
 pub fn raycast(
     player_transform: Query<&Transform, With<Player>>,
     em_world: Res<ExcavateManufacturateWorld>,
-) -> Option<Hit> {
-    let player_transform = player_transform.get_single().ok()?;
+    mut player_raycast: ResMut<PlayerRaycast>,
+) {
+    let player_transform = player_transform.single();
 
-    util::raytrace::raytrace_dda(
+    player_raycast.0 = util::raytrace::raytrace_dda(
         player_transform.translation,
         Vec3::from(player_transform.forward()),
         30,
@@ -25,18 +37,14 @@ pub fn raycast(
     )
 }
 
-pub fn draw_crosshair(In(hit): In<Option<Hit>>, mut gizmos: Gizmos) -> Option<Hit> {
-    if let Some(hit) = hit {
+pub fn draw_crosshair(player_raycast: Res<PlayerRaycast>, mut gizmos: Gizmos) {
+    if let PlayerRaycast(Some(hit)) = *player_raycast {
         gizmos.sphere(hit.position, Quat::IDENTITY, 0.25, Color::WHITE);
-
-        Some(hit)
-    } else {
-        None
     }
 }
 
 pub fn handle_destroy_block(
-    In(hit): In<Option<Hit>>,
+    player_raycast: Res<PlayerRaycast>,
 
     mut em_world: ResMut<ExcavateManufacturateWorld>,
     block_registry: Res<BlockRegistry>,
@@ -45,10 +53,8 @@ pub fn handle_destroy_block(
 
     input: Res<ButtonInput<MouseButton>>,
     keybinds: Res<PlayerKeybinds>,
-) -> Option<Hit> {
-    if !input.just_pressed(keybinds.break_block) {
-        None
-    } else if let Some(hit) = hit {
+) {
+    if let PlayerRaycast(Some(hit)) = *player_raycast {
         if input.just_pressed(keybinds.break_block) {
             let block_pos = BlockPos::from(hit.position - 0.1 * hit.normal);
             let block_data = em_world.get_block(block_pos);
@@ -64,14 +70,8 @@ pub fn handle_destroy_block(
                 chunk_spawn_queue.submit_on_block_update(block_pos);
             }
         }
-
-        Some(hit)
-    } else {
-        None
     }
 }
-
-pub fn finish_interaction(_input: In<Option<Hit>>) {}
 
 pub fn destroy_block(
     player_transform: Query<&Transform, With<Player>>,
