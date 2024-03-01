@@ -19,7 +19,7 @@ impl BlockRegistry {
 #[derive(Resource, Deref, DerefMut)]
 pub struct TextureAtlasHandle(Handle<Image>);
 
-pub fn setup_block_registry(mut commands: Commands, mut assets: ResMut<Assets<Image>>) {
+pub fn setup(mut commands: Commands, mut assets: ResMut<Assets<Image>>) {
     let mut assets_directory = bevy::asset::io::file::FileAssetReader::get_base_path();
     assets_directory.push("assets");
     assets_directory.push("excavatemanufacturate");

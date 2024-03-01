@@ -33,13 +33,7 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
             .add_event::<ChunkColliderDisableEvent>()
             .add_event::<BlockPlaceEvent>()
             .add_event::<BlockDestroyEvent>()
-            .add_systems(
-                Startup,
-                (
-                    render_distance::setup_render_distance,
-                    block::registry::setup_block_registry,
-                ),
-            )
+            .add_systems(Startup, (render_distance::setup, block::registry::setup))
             .add_systems(
                 OnEnter(GameState::InGame),
                 (
@@ -54,26 +48,33 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
                 Update,
                 (
                     (
-                        // Multithreaded chunk generation
-                        generation::poll_generated_chunks,
-                        generation::generate_chunks_multithreaded::<AsyncComputeTaskPool>,
+                        (
+                            // Multithreaded chunk generation
+                            generation::poll_generated_chunks,
+                            generation::generate_chunks_multithreaded::<AsyncComputeTaskPool>,
+                        ),
+                        // generation::generate_chunks,
+                        render::populate_chunk_spawn_queue,
+                        (
+                            (
+                                render::spawn_chunks::<NUM_CHUNKS_RENDERED_PER_FRAME>,
+                                render::despawn_chunks,
+                            ),
+                            (
+                                collider::send_enable_chunk_colliders_near_mobs,
+                                collider::send_disable_chunk_colliders_on_deserted_chunks,
+                                collider::enable_chunk_colliders,
+                                collider::disable_chunk_colliders,
+                            ),
+                        )
+                            .chain(),
                     ),
-                    // generation::generate_chunks,
-                    render::populate_chunk_spawn_queue,
                     (
-                        (
-                            render::spawn_chunks::<NUM_CHUNKS_RENDERED_PER_FRAME>,
-                            render::despawn_chunks,
-                        ),
-                        (
-                            collider::send_enable_chunk_colliders_near_mobs,
-                            collider::send_disable_chunk_colliders_on_deserted_chunks,
-                            collider::enable_chunk_colliders,
-                            collider::disable_chunk_colliders,
-                        ),
-                    )
-                        .chain(),
+                        world_access::apply_block_place_events,
+                        world_access::apply_block_destroy_events,
+                    ),
                 )
+                    .chain()
                     .run_if(in_state(GameState::InGame)),
             )
             .add_systems(

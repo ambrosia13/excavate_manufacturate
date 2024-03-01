@@ -50,7 +50,7 @@ pub fn handle_destroy_block(
     player_raycast: Res<PlayerRaycast>,
 
     mut block_destroy_events: EventWriter<BlockDestroyEvent>,
-    em_world: ResMut<ExcavateManufacturateWorld>,
+    em_world: Res<ExcavateManufacturateWorld>,
     block_registry: Res<BlockRegistry>,
 
     input: Res<ButtonInput<MouseButton>>,
