@@ -5,13 +5,29 @@ use crate::util::{block_pos::BlockPos, chunk_pos::ChunkPos};
 use super::{
     block::{BlockData, BlockType},
     chunk::ChunkData,
+    render::ChunkSpawnQueue,
 };
 
 #[derive(Event)]
-pub struct BlockPlaceEvent(pub BlockPos, pub BlockType);
+pub struct BlockPlaceEvent {
+    pub pos: BlockPos,
+    pub data: BlockData,
+}
 
 #[derive(Event)]
-pub struct BlockDestroyEvent(pub BlockPos, pub BlockType);
+pub struct BlockDestroyEvent {
+    pub pos: BlockPos,
+    pub previous_block: BlockData,
+}
+
+impl BlockDestroyEvent {
+    pub fn create(block_pos: BlockPos, world: &ExcavateManufacturateWorld) -> Self {
+        Self {
+            pos: block_pos,
+            previous_block: world.get_block(block_pos).unwrap().clone(),
+        }
+    }
+}
 
 #[derive(Resource)]
 pub struct ExcavateManufacturateWorld {
@@ -94,4 +110,26 @@ pub fn setup(mut commands: Commands) {
 pub fn cleanup(mut commands: Commands) {
     commands.remove_resource::<ExcavateManufacturateWorld>();
     info!("Cleaned up world data");
+}
+
+pub fn apply_block_place_events(
+    mut events: ResMut<Events<BlockPlaceEvent>>,
+    mut em_world: ResMut<ExcavateManufacturateWorld>,
+) {
+    for event in events.drain() {
+        em_world.set_block(event.pos, event.data);
+    }
+}
+
+pub fn apply_block_destroy_events(
+    mut events: ResMut<Events<BlockDestroyEvent>>,
+    mut em_world: ResMut<ExcavateManufacturateWorld>,
+    chunk_spawn_queue: Res<ChunkSpawnQueue>,
+) {
+    for event in events.drain() {
+        if em_world.set_block(event.pos, BlockData::none()) {
+            // Redraw chunks if needed
+            chunk_spawn_queue.submit_on_block_update(event.pos);
+        }
+    }
 }

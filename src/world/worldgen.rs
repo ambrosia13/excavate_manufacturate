@@ -34,8 +34,8 @@ pub fn setup(mut commands: Commands) {
 
     let world_generator = WorldGenerator {
         terrain_noise: |block_pos| match block_pos.y.cmp(&0) {
-            std::cmp::Ordering::Less => BlockData::None,
-            std::cmp::Ordering::Equal => BlockData::Some(BEDROCK),
+            std::cmp::Ordering::Less => BlockData::none(),
+            std::cmp::Ordering::Equal => BlockData::some(BEDROCK),
             std::cmp::Ordering::Greater => {
                 use noisy_bevy::*;
 
@@ -57,13 +57,13 @@ pub fn setup(mut commands: Commands) {
                 let base_ground_level = 30.0;
 
                 if noise < base_ground_level - 10.0 {
-                    BlockData::Some(STONE)
+                    BlockData::some(STONE)
                 } else if noise < base_ground_level - 1.0 {
-                    BlockData::Some(DIRT)
+                    BlockData::some(DIRT)
                 } else if noise < base_ground_level {
-                    BlockData::Some(GRASS)
+                    BlockData::some(GRASS)
                 } else {
-                    BlockData::None
+                    BlockData::none()
                 }
             }
         },
@@ -79,7 +79,7 @@ pub fn setup(mut commands: Commands) {
                                 let distance = block_pos.distance_squared(*pos);
 
                                 if distance < 4 {
-                                    world.set_block(pos, BlockData::Some(STONE));
+                                    world.set_block(pos, BlockData::some(STONE));
                                 }
                             }
                         }

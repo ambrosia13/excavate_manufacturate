@@ -15,7 +15,7 @@ pub struct ChunkData {
 impl ChunkData {
     pub fn empty() -> Self {
         Self {
-            blocks: vec![BlockData::None; CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE],
+            blocks: vec![BlockData::none(); CHUNK_SIZE * CHUNK_SIZE * CHUNK_SIZE],
             num_blocks: 0,
         }
     }
@@ -104,7 +104,7 @@ impl ChunkData {
 
                     let block = &self.blocks[index];
 
-                    let BlockData::Some(block_type) = block else {
+                    let Some(block_type) = block.as_ref() else {
                         continue;
                     };
 

@@ -8,7 +8,7 @@ use crate::{
     world::{
         block::{registry::BlockRegistry, static_block_data::BlockHardnessLevel, BlockData},
         render::ChunkSpawnQueue,
-        world_access::ExcavateManufacturateWorld,
+        world_access::{BlockDestroyEvent, ExcavateManufacturateWorld},
     },
 };
 
@@ -49,10 +49,9 @@ pub fn draw_crosshair(player_raycast: Res<PlayerRaycast>, mut gizmos: Gizmos) {
 pub fn handle_destroy_block(
     player_raycast: Res<PlayerRaycast>,
 
-    mut em_world: ResMut<ExcavateManufacturateWorld>,
+    mut block_destroy_events: EventWriter<BlockDestroyEvent>,
+    em_world: ResMut<ExcavateManufacturateWorld>,
     block_registry: Res<BlockRegistry>,
-
-    chunk_spawn_queue: Res<ChunkSpawnQueue>,
 
     input: Res<ButtonInput<MouseButton>>,
     keybinds: Res<PlayerKeybinds>,
@@ -69,8 +68,8 @@ pub fn handle_destroy_block(
                 })
             });
 
-            if block_can_be_destroyed && em_world.set_block(block_pos, BlockData::None) {
-                chunk_spawn_queue.submit_on_block_update(block_pos);
+            if block_can_be_destroyed {
+                block_destroy_events.send(BlockDestroyEvent::create(block_pos, &em_world));
             }
         }
     }
