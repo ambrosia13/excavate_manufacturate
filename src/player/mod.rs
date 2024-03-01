@@ -26,19 +26,15 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
             .chain();
 
         let player_movement_systems = (
-            (
-                movement::handle_player_rotation,
-                // Creative movement, just flight without physics
-                movement::handle_player_flight.run_if(in_state(PlayerGameMode::Creative)),
-                // Survival movement, includes physics & gravity
-                (
-                    movement::apply_mob_gravity,
-                    movement::apply_mob_velocity,
-                    movement::handle_player_movement,
-                )
-                    .chain()
-                    .run_if(in_state(PlayerGameMode::Survival)),
-            ),
+            movement::handle_player_rotation,
+            // Creative movement, just flight without physics
+            movement::handle_player_flight.run_if(in_state(PlayerGameMode::Creative)),
+            // Survival movement, includes physics & gravity
+            movement::handle_player_movement.run_if(in_state(PlayerGameMode::Survival)),
+        );
+
+        let physics_systems = (
+            (movement::apply_mob_gravity, movement::apply_mob_velocity),
             movement::copy_mob_physics,
         )
             .chain();
@@ -47,10 +43,23 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
             .add_systems(OnEnter(GameState::InGame), setup_systems)
             .add_systems(OnExit(GameState::InGame), cleanup_systems)
             .add_systems(
+                OnEnter(PlayerGameMode::Survival),
+                add_mob_velocity_to_player,
+            )
+            .add_systems(
+                OnExit(PlayerGameMode::Survival),
+                remove_mob_velocity_from_player,
+            )
+            .add_systems(
                 Update,
                 (
                     update_player_pos,
-                    (interaction_systems, player_movement_systems)
+                    (
+                        interaction_systems,
+                        player_movement_systems,
+                        physics_systems,
+                        interact::spawn_ball,
+                    )
                         .run_if(in_state(PlayingGameState::Playing)),
                 )
                     .run_if(in_state(GameState::InGame)),
@@ -68,6 +77,7 @@ pub struct PlayerPhysics;
 #[derive(Component)]
 pub struct Mob;
 
+/// Should be placed on the physics entity as a reference to the mob entity.
 #[derive(Component)]
 pub struct ReferenceToMob(pub Entity);
 
@@ -107,10 +117,25 @@ fn setup(mut commands: Commands) {
         },
         // The player physics entity has a reference to the player entity
         ReferenceToMob(player_entity),
-        MobVelocity(Vec3::ZERO),
     ));
 
     info!("Set up player");
+}
+
+fn add_mob_velocity_to_player(
+    mut commands: Commands,
+    player_physics: Query<Entity, With<PlayerPhysics>>,
+) {
+    let entity = player_physics.single();
+    commands.entity(entity).insert(MobVelocity(Vec3::ZERO));
+}
+
+fn remove_mob_velocity_from_player(
+    mut commands: Commands,
+    player_physics: Query<Entity, With<PlayerPhysics>>,
+) {
+    let entity = player_physics.single();
+    commands.entity(entity).remove::<MobVelocity>();
 }
 
 fn update_player_pos(

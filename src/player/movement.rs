@@ -1,7 +1,7 @@
 use bevy::{input::mouse::MouseMotion, prelude::*, window::PrimaryWindow};
 use bevy_rapier3d::control::{KinematicCharacterController, KinematicCharacterControllerOutput};
 
-use super::{keybinds::PlayerKeybinds, MobVelocity, Player, PlayerPhysics, ReferenceToMob};
+use super::{keybinds::PlayerKeybinds, Mob, MobVelocity, Player, PlayerPhysics, ReferenceToMob};
 
 pub fn handle_player_flight(
     player_query: Query<&Transform, With<Player>>,
@@ -183,7 +183,7 @@ pub fn apply_mob_velocity(
 pub fn copy_mob_physics(
     mut set: ParamSet<(
         // Mob transform query
-        Query<(&mut Transform, Has<Player>)>,
+        Query<(&mut Transform, Has<Player>), With<Mob>>,
         // Mob physics query
         Query<(&Transform, &ReferenceToMob), With<KinematicCharacterController>>,
     )>,
