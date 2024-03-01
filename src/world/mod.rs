@@ -6,6 +6,8 @@ use bevy::{
 
 use crate::state::GameState;
 
+use self::collider::{ChunkColliderDisableEvent, ChunkColliderEnableEvent};
+
 pub mod block;
 pub mod chunk;
 pub mod collider;
@@ -24,58 +26,62 @@ pub struct ExcavateManufacturateWorldPlugin;
 
 impl Plugin for ExcavateManufacturateWorldPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Startup,
-            (
-                render_distance::setup_render_distance,
-                block::registry::setup_block_registry,
-            ),
-        )
-        .add_systems(
-            OnEnter(GameState::InGame),
-            (
-                setup_light,
-                world_access::setup,
-                worldgen::setup,
-                generation::setup,
-                render::setup,
-            ),
-        )
-        .add_systems(
-            Update,
-            (
+        app.add_event::<ChunkColliderEnableEvent>()
+            .add_event::<ChunkColliderDisableEvent>()
+            .add_systems(
+                Startup,
                 (
-                    // Multithreaded chunk generation
-                    generation::poll_generated_chunks,
-                    generation::generate_chunks_multithreaded::<AsyncComputeTaskPool>,
+                    render_distance::setup_render_distance,
+                    block::registry::setup_block_registry,
                 ),
-                // generation::generate_chunks,
-                render::populate_chunk_spawn_queue,
+            )
+            .add_systems(
+                OnEnter(GameState::InGame),
+                (
+                    setup_light,
+                    world_access::setup,
+                    worldgen::setup,
+                    generation::setup,
+                    render::setup,
+                ),
+            )
+            .add_systems(
+                Update,
                 (
                     (
-                        render::spawn_chunks::<NUM_CHUNKS_RENDERED_PER_FRAME>,
-                        render::despawn_chunks,
+                        // Multithreaded chunk generation
+                        generation::poll_generated_chunks,
+                        generation::generate_chunks_multithreaded::<AsyncComputeTaskPool>,
                     ),
+                    // generation::generate_chunks,
+                    render::populate_chunk_spawn_queue,
                     (
-                        collider::insert_collider_on_player_chunk_pos,
-                        collider::remove_collider_on_faraway_chunks,
-                    ),
+                        (
+                            render::spawn_chunks::<NUM_CHUNKS_RENDERED_PER_FRAME>,
+                            render::despawn_chunks,
+                        ),
+                        (
+                            collider::send_enable_chunk_colliders_near_mobs,
+                            collider::send_disable_chunk_colliders_on_deserted_chunks,
+                            collider::enable_chunk_colliders,
+                            collider::disable_chunk_colliders,
+                        ),
+                    )
+                        .chain(),
                 )
-                    .chain(),
+                    .run_if(in_state(GameState::InGame)),
             )
-                .run_if(in_state(GameState::InGame)),
-        )
-        .add_systems(
-            OnExit(GameState::InGame),
-            (
-                remove_light,
-                world_access::cleanup,
-                worldgen::cleanup,
-                generation::cleanup,
-                render::cleanup,
-                render::despawn_all_chunks,
-            ),
-        );
+            .add_systems(
+                OnExit(GameState::InGame),
+                (
+                    remove_light,
+                    world_access::cleanup,
+                    worldgen::cleanup,
+                    generation::cleanup,
+                    render::cleanup,
+                    render::despawn_all_chunks,
+                ),
+            );
     }
 }
 
