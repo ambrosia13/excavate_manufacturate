@@ -2,7 +2,7 @@ use bevy::{prelude::*, utils::HashSet};
 use bevy_rapier3d::geometry::{Collider, ColliderDisabled};
 
 use crate::{
-    player::{Player, ReferenceToMob},
+    player::ReferenceToMob,
     util::{block_pos::BlockPos, chunk_pos::ChunkPos},
 };
 
@@ -33,11 +33,7 @@ pub fn send_enable_chunk_colliders_near_mobs(
                     continue;
                 }
 
-                // if let Some(mut entity_commands) = commands.get_entity(chunk_entity) {
                 events.send(ChunkColliderEnableEvent(chunk_pos));
-                // } else {
-                //     warn!("Entity at chunk position {:?} doesn't exist", chunk_pos);
-                // }
             }
         }
     }
