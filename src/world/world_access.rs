@@ -2,7 +2,16 @@ use bevy::{prelude::*, utils::HashMap};
 
 use crate::util::{block_pos::BlockPos, chunk_pos::ChunkPos};
 
-use super::{block::BlockData, chunk::ChunkData};
+use super::{
+    block::{BlockData, BlockType},
+    chunk::ChunkData,
+};
+
+#[derive(Event)]
+pub struct BlockPlaceEvent(pub BlockPos, pub BlockType);
+
+#[derive(Event)]
+pub struct BlockDestroyEvent(pub BlockPos, pub BlockType);
 
 #[derive(Resource)]
 pub struct ExcavateManufacturateWorld {

@@ -6,7 +6,10 @@ use bevy::{
 
 use crate::state::GameState;
 
-use self::collider::{ChunkColliderDisableEvent, ChunkColliderEnableEvent};
+use self::{
+    collider::{ChunkColliderDisableEvent, ChunkColliderEnableEvent},
+    world_access::{BlockDestroyEvent, BlockPlaceEvent},
+};
 
 pub mod block;
 pub mod chunk;
@@ -28,6 +31,8 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<ChunkColliderEnableEvent>()
             .add_event::<ChunkColliderDisableEvent>()
+            .add_event::<BlockPlaceEvent>()
+            .add_event::<BlockDestroyEvent>()
             .add_systems(
                 Startup,
                 (
