@@ -4,8 +4,6 @@ pub mod excavatemanufacturate_blocks;
 pub mod registry;
 pub mod static_block_data;
 
-//pub type BlockData = Option<BlockType>;
-
 #[derive(Debug, Clone, Deref, DerefMut)]
 pub struct BlockData(Option<BlockType>);
 

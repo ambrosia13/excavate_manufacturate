@@ -20,7 +20,7 @@ pub mod block_types {
 
 pub mod block_data {
     use crate::world::block::static_block_data::{
-        AtlasCoordinates, BlockHardnessLevel, BlockTextures, StaticBlockData,
+        AtlasCoordinates, BlockHardnessLevel, BlockTextures, StaticBlockData, ToolType,
     };
 
     pub const GRASS: StaticBlockData = StaticBlockData {
@@ -59,6 +59,6 @@ pub mod block_data {
             min: (16, 0),
             max: (31, 15),
         }),
-        hardness: BlockHardnessLevel::ToolStrength(0),
+        hardness: BlockHardnessLevel::Tool(ToolType::Pickaxe, 0),
     };
 }

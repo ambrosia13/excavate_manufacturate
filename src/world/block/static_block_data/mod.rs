@@ -40,9 +40,18 @@ impl BlockTextures {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
+pub enum ToolType {
+    Shovel,
+    Pickaxe,
+    Axe,
+    Sword,
+    Hoe,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum BlockHardnessLevel {
     Hand,
-    ToolStrength(u8),
+    Tool(ToolType, u8),
     Unbreakable,
 }
 
