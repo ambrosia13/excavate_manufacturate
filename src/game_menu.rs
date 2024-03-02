@@ -6,7 +6,7 @@ use bevy_egui::{egui, EguiContexts};
 
 use crate::{
     player::Player,
-    state::{GameState, PlayerGameMode},
+    state::{GameModeState, MenuState},
     util::block_pos::BlockPos,
     world::{
         generation::GeneratedChunkTask,
@@ -22,7 +22,7 @@ impl Plugin for ExcavateManufacturateGameMenuPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (game_menu_system, performance_metrics_system).run_if(in_state(GameState::InGame)),
+            (game_menu_system, performance_metrics_system).run_if(in_state(MenuState::InGame)),
         );
     }
 }
@@ -30,8 +30,8 @@ impl Plugin for ExcavateManufacturateGameMenuPlugin {
 #[allow(clippy::too_many_arguments)]
 fn game_menu_system(
     mut contexts: EguiContexts,
-    mut next_state: ResMut<NextState<GameState>>,
-    mut next_game_mode: ResMut<NextState<PlayerGameMode>>,
+    mut next_state: ResMut<NextState<MenuState>>,
+    mut next_game_mode: ResMut<NextState<GameModeState>>,
     mut render_distance: ResMut<RenderDistance>,
     player_transform: Query<(&Transform, &BlockPos), With<Player>>,
 ) {
@@ -48,14 +48,14 @@ fn game_menu_system(
         render_distance.set_to(render_distance_chunks as usize);
 
         if ui.button("Creative mode").clicked() {
-            next_game_mode.set(PlayerGameMode::Creative);
+            next_game_mode.set(GameModeState::Creative);
         }
         if ui.button("Survival mode").clicked() {
-            next_game_mode.set(PlayerGameMode::Survival);
+            next_game_mode.set(GameModeState::Survival);
         }
 
         if ui.button("Exit to main menu").clicked() {
-            next_state.set(GameState::Menu);
+            next_state.set(MenuState::MainMenu);
         }
     });
 }

@@ -6,7 +6,7 @@ use bevy_rapier3d::prelude::*;
 
 use crate::{
     player,
-    state::{GameState, PlayingGameState},
+    state::{MenuState, PlayState},
     world,
 };
 
@@ -19,16 +19,16 @@ impl Plugin for ExcavateManufacturateGamePlugin {
                 player::ExavateManufacturatePlayerPlugin,
                 world::ExcavateManufacturateWorldPlugin,
             ))
-            .add_systems(OnEnter(PlayingGameState::Playing), toggle_cursor_enabled)
-            .add_systems(OnEnter(PlayingGameState::Paused), toggle_cursor_enabled)
+            .add_systems(OnEnter(PlayState::Playing), toggle_cursor_enabled)
+            .add_systems(OnEnter(PlayState::Paused), toggle_cursor_enabled)
             .add_systems(
                 Update,
                 (
                     exit_to_menu,
-                    pause_game.run_if(in_state(PlayingGameState::Playing)),
-                    unpause_game.run_if(in_state(PlayingGameState::Paused)),
+                    pause_game.run_if(in_state(PlayState::Playing)),
+                    unpause_game.run_if(in_state(PlayState::Paused)),
                 )
-                    .run_if(in_state(GameState::InGame)),
+                    .run_if(in_state(MenuState::InGame)),
             );
     }
 }
@@ -48,29 +48,26 @@ pub fn toggle_cursor_enabled(mut window_query: Query<&mut Window, With<PrimaryWi
     }
 }
 
-pub fn pause_game(
-    mut next_state: ResMut<NextState<PlayingGameState>>,
-    input: Res<ButtonInput<KeyCode>>,
-) {
+pub fn pause_game(mut next_state: ResMut<NextState<PlayState>>, input: Res<ButtonInput<KeyCode>>) {
     if input.just_pressed(KeyCode::Escape) {
-        next_state.set(PlayingGameState::Paused);
+        next_state.set(PlayState::Paused);
     }
 }
 
 pub fn unpause_game(
-    mut next_state: ResMut<NextState<PlayingGameState>>,
+    mut next_state: ResMut<NextState<PlayState>>,
     input: Res<ButtonInput<KeyCode>>,
 ) {
     if input.just_pressed(KeyCode::Escape) {
-        next_state.set(PlayingGameState::Playing);
+        next_state.set(PlayState::Playing);
     }
 }
 
 pub fn exit_to_menu(
-    mut next_state: ResMut<NextState<GameState>>,
+    mut next_state: ResMut<NextState<MenuState>>,
     input: Res<ButtonInput<KeyCode>>,
 ) {
     if input.just_pressed(KeyCode::Backspace) {
-        next_state.set(GameState::Menu);
+        next_state.set(MenuState::MainMenu);
     }
 }

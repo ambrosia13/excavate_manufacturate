@@ -4,7 +4,7 @@ use bevy::{
     tasks::AsyncComputeTaskPool,
 };
 
-use crate::state::GameState;
+use crate::state::MenuState;
 
 use self::{
     collider::{ChunkColliderDisableEvent, ChunkColliderEnableEvent},
@@ -35,7 +35,7 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
             .add_event::<BlockDestroyEvent>()
             .add_systems(Startup, (render_distance::setup, block::registry::setup))
             .add_systems(
-                OnEnter(GameState::InGame),
+                OnEnter(MenuState::InGame),
                 (
                     setup_light,
                     world_access::setup,
@@ -75,10 +75,10 @@ impl Plugin for ExcavateManufacturateWorldPlugin {
                     ),
                 )
                     .chain()
-                    .run_if(in_state(GameState::InGame)),
+                    .run_if(in_state(MenuState::InGame)),
             )
             .add_systems(
-                OnExit(GameState::InGame),
+                OnExit(MenuState::InGame),
                 (
                     remove_light,
                     world_access::cleanup,

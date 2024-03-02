@@ -3,7 +3,7 @@ use bevy_rapier3d::prelude::*;
 use rand::Rng;
 
 use crate::{
-    state::{GameState, PlayerGameMode, PlayingGameState},
+    state::{GameModeState, MenuState, PlayState},
     util::{block_pos::BlockPos, chunk_pos::ChunkPos},
 };
 
@@ -28,9 +28,9 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
         let player_movement_systems = (
             movement::handle_player_rotation,
             // Creative movement, just flight without physics
-            movement::handle_player_flight.run_if(in_state(PlayerGameMode::Creative)),
+            movement::handle_player_flight.run_if(in_state(GameModeState::Creative)),
             // Survival movement, includes physics & gravity
-            movement::handle_player_movement.run_if(in_state(PlayerGameMode::Survival)),
+            movement::handle_player_movement.run_if(in_state(GameModeState::Survival)),
         );
 
         let physics_systems = (
@@ -40,14 +40,11 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
             .chain();
 
         app.add_systems(Startup, keybinds::setup)
-            .add_systems(OnEnter(GameState::InGame), setup_systems)
-            .add_systems(OnExit(GameState::InGame), cleanup_systems)
+            .add_systems(OnEnter(MenuState::InGame), setup_systems)
+            .add_systems(OnExit(MenuState::InGame), cleanup_systems)
+            .add_systems(OnEnter(GameModeState::Survival), add_mob_velocity_to_player)
             .add_systems(
-                OnEnter(PlayerGameMode::Survival),
-                add_mob_velocity_to_player,
-            )
-            .add_systems(
-                OnExit(PlayerGameMode::Survival),
+                OnExit(GameModeState::Survival),
                 remove_mob_velocity_from_player,
             )
             .add_systems(
@@ -60,9 +57,9 @@ impl Plugin for ExavateManufacturatePlayerPlugin {
                         physics_systems,
                         interact::spawn_ball,
                     )
-                        .run_if(in_state(PlayingGameState::Playing)),
+                        .run_if(in_state(PlayState::Playing)),
                 )
-                    .run_if(in_state(GameState::InGame)),
+                    .run_if(in_state(MenuState::InGame)),
             )
             .add_plugins(RapierDebugRenderPlugin::default().disabled());
     }

@@ -1,21 +1,21 @@
 use bevy::prelude::*;
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
-pub enum GameState {
+pub enum MenuState {
     #[default]
-    Menu,
+    MainMenu,
     InGame,
 }
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
-pub enum PlayingGameState {
+pub enum PlayState {
     #[default]
     Playing,
     Paused,
 }
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
-pub enum PlayerGameMode {
+pub enum GameModeState {
     Survival,
     #[default]
     Creative,
