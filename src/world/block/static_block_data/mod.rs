@@ -8,6 +8,8 @@ pub struct AtlasCoordinates {
     pub max: (u16, u16),
 }
 
+/// Contains coordinate data for each block. If only the top texture is specified, that texture is used for
+/// all faces of the block.
 pub struct BlockTextures {
     pub top: AtlasCoordinates,
 
@@ -19,6 +21,7 @@ pub struct BlockTextures {
 }
 
 impl BlockTextures {
+    /// Creates a [`BlockTextures`] from one set of atlas coordinates.
     pub const fn from_single(atlas_coordinates: AtlasCoordinates) -> Self {
         Self {
             top: atlas_coordinates,
