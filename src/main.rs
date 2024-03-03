@@ -3,7 +3,9 @@ use state::{GameModeState, MenuState, PlayState};
 
 mod game;
 mod game_menu;
+mod keybinds;
 mod main_menu;
+mod mob;
 mod player;
 mod state;
 mod util;
@@ -33,5 +35,6 @@ fn main() {
             game::ExcavateManufacturateGamePlugin,
             game_menu::ExcavateManufacturateGameMenuPlugin,
         ))
+        .add_systems(Startup, keybinds::setup)
         .run();
 }
