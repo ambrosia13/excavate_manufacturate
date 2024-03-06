@@ -1,5 +1,6 @@
-use std::ops::Deref;
+use std::{ops::Deref, sync::Arc};
 
+use crate::world::worldgen::WorldGenerator;
 use bevy::{
     prelude::*,
     tasks::{AsyncComputeTaskPool, ComputeTaskPool, Task, TaskPool},
@@ -12,10 +13,11 @@ use crate::{
 };
 
 use super::{
+    block::registry::BlockRegistryResource,
     chunk::ChunkData,
     render::{ChunkSpawnQueue, SpawnedChunks},
     render_distance::RenderDistance,
-    worldgen::WorldGeneratorResource,
+    worldgen::{ActiveWorldGenerator, OverworldGenerator},
 };
 use crate::world::world_access::ExcavateManufacturateWorld;
 
@@ -56,7 +58,8 @@ impl GetTaskPool for ComputeTaskPool {
 pub fn generate_chunks_multithreaded<T: GetTaskPool>(
     mut commands: Commands,
     em_world: Res<ExcavateManufacturateWorld>,
-    world_generator: Res<WorldGeneratorResource>,
+    world_generator: Res<ActiveWorldGenerator<OverworldGenerator>>,
+    block_registry: Res<BlockRegistryResource>,
     render_distance: Res<RenderDistance>,
     player_query: Query<&ChunkPos, With<Player>>,
     mut possibly_generated_chunks: ResMut<PossiblyGeneratedChunks>,
@@ -93,12 +96,13 @@ pub fn generate_chunks_multithreaded<T: GetTaskPool>(
     });
 
     for chunk_pos in chunk_positions {
-        let world_generator = world_generator.clone();
+        let world_generator = Arc::clone(&world_generator);
+        let block_registry = Arc::clone(&block_registry);
 
         let task = thread_pool.spawn(async move {
             let chunk_data = ChunkData::with_data(|block_pos| {
                 let block_pos = block_pos + BlockPos::from(chunk_pos);
-                world_generator.generate_terrain_noise(block_pos)
+                world_generator.terrain_noise(block_pos, &block_registry)
             });
 
             (chunk_pos, chunk_data)

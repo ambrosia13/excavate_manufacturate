@@ -2,6 +2,8 @@ use std::hash::Hash;
 
 use bevy::prelude::*;
 
+use self::registry::BlockRegistry;
+
 pub mod excavatemanufacturate_blocks;
 pub mod registry;
 pub mod static_block_data;
@@ -20,16 +22,14 @@ impl BlockData {
     pub fn none() -> Self {
         Self(None)
     }
-
-    /// Converts this [`BlockData`] into an `Option<BlockType>`.
-    pub fn get(self) -> Option<Block> {
-        self.0
-    }
 }
+
+#[derive(Debug, Clone, Copy, Deref, DerefMut, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct BlockName(pub &'static str);
 
 /// Represents an identifier of static block data. To represent static data, individual blocks need to store this ID instead of the data itself.
 #[derive(Debug, Clone, Copy, Deref, DerefMut, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct BlockId(pub &'static str);
+pub struct BlockId(pub u32);
 
 /// The data representation of a single block.
 #[derive(Debug, Clone)]
@@ -42,11 +42,10 @@ pub struct Block {
 }
 
 impl Block {
-    /// Create a block without any dynamic data. Should be used for block types that are identical across all instances.
-    pub const fn new_static(id: BlockId) -> Self {
-        Self {
+    pub fn from_name(name: &BlockName, registry: &BlockRegistry) -> Option<Self> {
+        registry.get_block_id(name).map(|id| Self {
             id,
             dynamic_data: None,
-        }
+        })
     }
 }

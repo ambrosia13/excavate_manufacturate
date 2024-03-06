@@ -1,21 +1,10 @@
-pub mod block_ids {
-    use crate::world::block::BlockId;
+pub mod block_names {
+    use crate::world::block::BlockName;
 
-    pub const GRASS: BlockId = BlockId("excavatemanufacturate/grass");
-    pub const DIRT: BlockId = BlockId("excavatemanufacturate/dirt");
-    pub const BEDROCK: BlockId = BlockId("excavatemanufacturate/bedrock");
-    pub const STONE: BlockId = BlockId("excavatemanufacturate/stone");
-}
-
-pub mod block_types {
-    use crate::world::block::Block;
-
-    use super::block_ids;
-
-    pub const GRASS: Block = Block::new_static(block_ids::GRASS);
-    pub const DIRT: Block = Block::new_static(block_ids::DIRT);
-    pub const BEDROCK: Block = Block::new_static(block_ids::BEDROCK);
-    pub const STONE: Block = Block::new_static(block_ids::STONE);
+    pub const GRASS: BlockName = BlockName("excavatemanufacturate/grass");
+    pub const DIRT: BlockName = BlockName("excavatemanufacturate/dirt");
+    pub const BEDROCK: BlockName = BlockName("excavatemanufacturate/bedrock");
+    pub const STONE: BlockName = BlockName("excavatemanufacturate/stone");
 }
 
 pub mod block_data {

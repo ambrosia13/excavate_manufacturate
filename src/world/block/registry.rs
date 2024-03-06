@@ -1,14 +1,29 @@
+use std::sync::Arc;
+
 use bevy::{prelude::*, render::render_asset::RenderAssetUsages, utils::HashMap};
 
-use super::{excavatemanufacturate_blocks, static_block_data::StaticBlockData, BlockId};
+use super::{
+    excavatemanufacturate_blocks, static_block_data::StaticBlockData, Block, BlockId, BlockName,
+};
 
-#[derive(Resource)]
+#[derive(Resource, Deref)]
+pub struct BlockRegistryResource(Arc<BlockRegistry>);
+
 pub struct BlockRegistry {
+    pub block_id_map: HashMap<BlockName, BlockId>,
     pub static_block_data: HashMap<BlockId, StaticBlockData>,
     pub atlas_size: (usize, usize),
 }
 
 impl BlockRegistry {
+    pub fn create_block(&self, name: &BlockName) -> Option<Block> {
+        Block::from_name(name, self)
+    }
+
+    pub fn get_block_id(&self, name: &BlockName) -> Option<BlockId> {
+        self.block_id_map.get(name).cloned()
+    }
+
     pub fn get_block_data(&self, id: BlockId) -> &StaticBlockData {
         self.static_block_data
             .get(&id)
@@ -38,26 +53,44 @@ pub fn setup(mut commands: Commands, mut assets: ResMut<Assets<Image>>) {
     commands.insert_resource(TextureAtlasHandle(assets.add(atlas_image)));
 
     let mut block_registry = BlockRegistry {
+        block_id_map: HashMap::new(),
         static_block_data: HashMap::new(),
         atlas_size,
     };
 
+    use excavatemanufacturate_blocks::*;
+
+    let block_names = {
+        [
+            block_names::GRASS,
+            block_names::DIRT,
+            block_names::BEDROCK,
+            block_names::STONE,
+        ]
+    };
+
+    for (next_block_id, name) in block_names.into_iter().enumerate() {
+        block_registry
+            .block_id_map
+            .insert(name, BlockId(next_block_id as u32));
+    }
+
     block_registry.static_block_data.insert(
-        excavatemanufacturate_blocks::block_ids::GRASS,
+        block_registry.get_block_id(&block_names::GRASS).unwrap(),
         excavatemanufacturate_blocks::block_data::GRASS,
     );
     block_registry.static_block_data.insert(
-        excavatemanufacturate_blocks::block_ids::DIRT,
+        block_registry.get_block_id(&block_names::DIRT).unwrap(),
         excavatemanufacturate_blocks::block_data::DIRT,
     );
     block_registry.static_block_data.insert(
-        excavatemanufacturate_blocks::block_ids::BEDROCK,
+        block_registry.get_block_id(&block_names::BEDROCK).unwrap(),
         excavatemanufacturate_blocks::block_data::BEDROCK,
     );
     block_registry.static_block_data.insert(
-        excavatemanufacturate_blocks::block_ids::STONE,
+        block_registry.get_block_id(&block_names::STONE).unwrap(),
         excavatemanufacturate_blocks::block_data::STONE,
     );
 
-    commands.insert_resource(block_registry);
+    commands.insert_resource(BlockRegistryResource(Arc::new(block_registry)));
 }

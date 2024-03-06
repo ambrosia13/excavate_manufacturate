@@ -1,41 +1,24 @@
 use std::sync::Arc;
 
 use bevy::prelude::*;
-use rand::{thread_rng, Rng};
 
 use crate::{util::block_pos::BlockPos, world::block};
 
-use super::{block::BlockData, world_access::ExcavateManufacturateWorld};
+use super::block::{registry::BlockRegistry, BlockData};
 
-#[derive(Resource, Deref, DerefMut)]
-pub struct WorldGeneratorResource(Arc<WorldGenerator>);
-
-pub struct WorldGenerator {
-    pub terrain_noise: fn(BlockPos) -> BlockData,
-    pub landscape_feature_generator: fn(BlockPos, &mut ExcavateManufacturateWorld),
+pub trait WorldGenerator {
+    fn terrain_noise(&self, block_pos: BlockPos, registry: &BlockRegistry) -> BlockData;
 }
 
-impl WorldGenerator {
-    pub fn generate_terrain_noise(&self, block_pos: BlockPos) -> BlockData {
-        (self.terrain_noise)(block_pos)
-    }
+pub struct OverworldGenerator;
 
-    pub fn generate_landscape_features(
-        &self,
-        block_pos: BlockPos,
-        world: &mut ExcavateManufacturateWorld,
-    ) {
-        (self.landscape_feature_generator)(block_pos, world);
-    }
-}
+impl WorldGenerator for OverworldGenerator {
+    fn terrain_noise(&self, block_pos: BlockPos, registry: &BlockRegistry) -> BlockData {
+        use block::excavatemanufacturate_blocks::block_names::*;
 
-pub fn setup(mut commands: Commands) {
-    use block::excavatemanufacturate_blocks::block_types::*;
-
-    let world_generator = WorldGenerator {
-        terrain_noise: |block_pos| match block_pos.y.cmp(&0) {
+        match block_pos.y.cmp(&0) {
             std::cmp::Ordering::Less => BlockData::none(),
-            std::cmp::Ordering::Equal => BlockData::some(BEDROCK),
+            std::cmp::Ordering::Equal => BlockData::some(registry.create_block(&GRASS).unwrap()),
             std::cmp::Ordering::Greater => {
                 use noisy_bevy::*;
 
@@ -57,49 +40,28 @@ pub fn setup(mut commands: Commands) {
                 let base_ground_level = 30.0;
 
                 if noise < base_ground_level - 10.0 {
-                    BlockData::some(STONE)
+                    BlockData::some(registry.create_block(&STONE).unwrap())
                 } else if noise < base_ground_level - 1.0 {
-                    BlockData::some(DIRT)
+                    BlockData::some(registry.create_block(&DIRT).unwrap())
                 } else if noise < base_ground_level {
-                    BlockData::some(GRASS)
+                    BlockData::some(registry.create_block(&GRASS).unwrap())
                 } else {
                     BlockData::none()
                 }
             }
-        },
-        landscape_feature_generator: |block_pos, world| {
-            let boulder_generator =
-                |block_pos: BlockPos, world: &mut ExcavateManufacturateWorld| {
-                    let boulder_radius = 3;
+        }
+    }
+}
 
-                    for x in -boulder_radius..=boulder_radius {
-                        for y in -boulder_radius..=boulder_radius {
-                            for z in -boulder_radius..=boulder_radius {
-                                let pos = block_pos + BlockPos::new(x, y, z);
-                                let distance = block_pos.distance_squared(*pos);
+#[derive(Resource, Deref, DerefMut)]
+pub struct ActiveWorldGenerator<T: WorldGenerator>(Arc<T>);
 
-                                if distance < 4 {
-                                    world.set_block(pos, BlockData::some(STONE));
-                                }
-                            }
-                        }
-                    }
-                };
-
-            let rand = thread_rng().gen_range(0..1000);
-
-            match rand {
-                0..=9 => boulder_generator(block_pos, world),
-                _ => {}
-            }
-        },
-    };
-
-    commands.insert_resource(WorldGeneratorResource(Arc::new(world_generator)));
+pub fn setup(mut commands: Commands) {
+    commands.insert_resource(ActiveWorldGenerator(Arc::new(OverworldGenerator)));
     info!("Set up world generator");
 }
 
 pub fn cleanup(mut commands: Commands) {
-    commands.remove_resource::<WorldGeneratorResource>();
+    commands.remove_resource::<ActiveWorldGenerator<OverworldGenerator>>();
     info!("Cleaned up world generator");
 }

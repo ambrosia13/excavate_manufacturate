@@ -17,7 +17,7 @@ use crate::{
 };
 
 use super::{
-    block::registry::{BlockRegistry, TextureAtlasHandle},
+    block::registry::{BlockRegistryResource, TextureAtlasHandle},
     render_distance::RenderDistance,
     world_access::ExcavateManufacturateWorld,
 };
@@ -112,7 +112,7 @@ pub fn spawn_chunks<const COUNT: usize>(
     mut chunk_meshes: ResMut<ChunkMeshes>,
     em_world: Res<ExcavateManufacturateWorld>,
     chunk_spawn_queue: Res<ChunkSpawnQueue>,
-    block_registry: Res<BlockRegistry>,
+    block_registry: Res<BlockRegistryResource>,
     texture_atlas_handle: Res<TextureAtlasHandle>,
 ) {
     for _ in 0..COUNT {

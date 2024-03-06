@@ -5,7 +5,7 @@ use crate::{
     keybinds::Keybinds,
     util::{self, block_pos::BlockPos, raytrace::Hit},
     world::{
-        block::{registry::BlockRegistry, static_block_data::BlockHardnessLevel},
+        block::{registry::BlockRegistryResource, static_block_data::BlockHardnessLevel},
         world_access::{BlockDestroyEvent, ExcavateManufacturateWorld},
     },
 };
@@ -49,7 +49,7 @@ pub fn handle_destroy_block(
 
     mut block_destroy_events: EventWriter<BlockDestroyEvent>,
     em_world: Res<ExcavateManufacturateWorld>,
-    block_registry: Res<BlockRegistry>,
+    block_registry: Res<BlockRegistryResource>,
 
     input: Res<ButtonInput<MouseButton>>,
     keybinds: Res<Keybinds>,
