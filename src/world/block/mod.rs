@@ -29,7 +29,7 @@ pub struct BlockName(pub &'static str);
 
 /// Represents an identifier of static block data. To represent static data, individual blocks need to store this ID instead of the data itself.
 #[derive(Debug, Clone, Copy, Deref, DerefMut, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct BlockId(pub u32);
+pub struct BlockId(pub u16);
 
 /// The data representation of a single block.
 #[derive(Debug, Clone)]

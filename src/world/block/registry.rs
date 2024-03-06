@@ -16,6 +16,47 @@ pub struct BlockRegistry {
 }
 
 impl BlockRegistry {
+    fn create(atlas_size: (usize, usize)) -> Self {
+        use excavatemanufacturate_blocks::*;
+
+        let mut block_id_map = HashMap::new();
+        let mut static_block_data = HashMap::new();
+
+        let block_names = [
+            block_names::GRASS,
+            block_names::DIRT,
+            block_names::BEDROCK,
+            block_names::STONE,
+        ];
+
+        for (next_block_id, name) in block_names.into_iter().enumerate() {
+            block_id_map.insert(name, BlockId(next_block_id as u16));
+        }
+
+        static_block_data.insert(
+            *block_id_map.get(&block_names::GRASS).unwrap(),
+            excavatemanufacturate_blocks::block_data::GRASS,
+        );
+        static_block_data.insert(
+            *block_id_map.get(&block_names::DIRT).unwrap(),
+            excavatemanufacturate_blocks::block_data::DIRT,
+        );
+        static_block_data.insert(
+            *block_id_map.get(&block_names::BEDROCK).unwrap(),
+            excavatemanufacturate_blocks::block_data::BEDROCK,
+        );
+        static_block_data.insert(
+            *block_id_map.get(&block_names::STONE).unwrap(),
+            excavatemanufacturate_blocks::block_data::STONE,
+        );
+
+        Self {
+            block_id_map,
+            static_block_data,
+            atlas_size,
+        }
+    }
+
     pub fn create_block(&self, name: &BlockName) -> Option<Block> {
         Block::from_name(name, self)
     }
@@ -25,6 +66,7 @@ impl BlockRegistry {
     }
 
     pub fn get_block_data(&self, id: BlockId) -> &StaticBlockData {
+        // It's ok to panic here because BlockId is never manually created; it should always be valid.
         self.static_block_data
             .get(&id)
             .unwrap_or_else(|| panic!("Block id {:?} doesn't exist in the block registry", id))
@@ -52,45 +94,6 @@ pub fn setup(mut commands: Commands, mut assets: ResMut<Assets<Image>>) {
         Image::from_dynamic(atlas_dynamic_image, true, RenderAssetUsages::RENDER_WORLD);
     commands.insert_resource(TextureAtlasHandle(assets.add(atlas_image)));
 
-    let mut block_registry = BlockRegistry {
-        block_id_map: HashMap::new(),
-        static_block_data: HashMap::new(),
-        atlas_size,
-    };
-
-    use excavatemanufacturate_blocks::*;
-
-    let block_names = {
-        [
-            block_names::GRASS,
-            block_names::DIRT,
-            block_names::BEDROCK,
-            block_names::STONE,
-        ]
-    };
-
-    for (next_block_id, name) in block_names.into_iter().enumerate() {
-        block_registry
-            .block_id_map
-            .insert(name, BlockId(next_block_id as u32));
-    }
-
-    block_registry.static_block_data.insert(
-        block_registry.get_block_id(&block_names::GRASS).unwrap(),
-        excavatemanufacturate_blocks::block_data::GRASS,
-    );
-    block_registry.static_block_data.insert(
-        block_registry.get_block_id(&block_names::DIRT).unwrap(),
-        excavatemanufacturate_blocks::block_data::DIRT,
-    );
-    block_registry.static_block_data.insert(
-        block_registry.get_block_id(&block_names::BEDROCK).unwrap(),
-        excavatemanufacturate_blocks::block_data::BEDROCK,
-    );
-    block_registry.static_block_data.insert(
-        block_registry.get_block_id(&block_names::STONE).unwrap(),
-        excavatemanufacturate_blocks::block_data::STONE,
-    );
-
+    let block_registry = BlockRegistry::create(atlas_size);
     commands.insert_resource(BlockRegistryResource(Arc::new(block_registry)));
 }
