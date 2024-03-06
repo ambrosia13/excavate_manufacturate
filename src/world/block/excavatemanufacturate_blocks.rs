@@ -8,14 +8,14 @@ pub mod block_ids {
 }
 
 pub mod block_types {
-    use crate::world::block::BlockType;
+    use crate::world::block::Block;
 
     use super::block_ids;
 
-    pub const GRASS: BlockType = BlockType::new_static(block_ids::GRASS);
-    pub const DIRT: BlockType = BlockType::new_static(block_ids::DIRT);
-    pub const BEDROCK: BlockType = BlockType::new_static(block_ids::BEDROCK);
-    pub const STONE: BlockType = BlockType::new_static(block_ids::STONE);
+    pub const GRASS: Block = Block::new_static(block_ids::GRASS);
+    pub const DIRT: Block = Block::new_static(block_ids::DIRT);
+    pub const BEDROCK: Block = Block::new_static(block_ids::BEDROCK);
+    pub const STONE: Block = Block::new_static(block_ids::STONE);
 }
 
 pub mod block_data {

@@ -8,11 +8,11 @@ pub mod static_block_data;
 
 /// The data contained in the world. A newtype of `Option<BlockData>`, contains either a block or no block.
 #[derive(Debug, Clone, Deref, DerefMut)]
-pub struct BlockData(Option<BlockType>);
+pub struct BlockData(Option<Block>);
 
 impl BlockData {
     /// Block data exists.
-    pub fn some(block_type: BlockType) -> Self {
+    pub fn some(block_type: Block) -> Self {
         Self(Some(block_type))
     }
 
@@ -22,7 +22,7 @@ impl BlockData {
     }
 
     /// Converts this [`BlockData`] into an `Option<BlockType>`.
-    pub fn get(self) -> Option<BlockType> {
+    pub fn get(self) -> Option<Block> {
         self.0
     }
 }
@@ -33,7 +33,7 @@ pub struct BlockId(pub &'static str);
 
 /// The data representation of a single block.
 #[derive(Debug, Clone)]
-pub struct BlockType {
+pub struct Block {
     /// A static ID that serves as a pointer to static block data applicable to all blocks of this type.
     pub id: BlockId,
 
@@ -41,7 +41,7 @@ pub struct BlockType {
     pub dynamic_data: Option<Entity>,
 }
 
-impl BlockType {
+impl Block {
     /// Create a block without any dynamic data. Should be used for block types that are identical across all instances.
     pub const fn new_static(id: BlockId) -> Self {
         Self {
