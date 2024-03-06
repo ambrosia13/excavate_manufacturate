@@ -1,17 +1,32 @@
 use bevy::{input::mouse::MouseMotion, prelude::*, window::PrimaryWindow};
-use bevy_rapier3d::control::{KinematicCharacterController, KinematicCharacterControllerOutput};
+use bevy_rapier3d::prelude::*;
 
-use super::{keybinds::PlayerKeybinds, Mob, MobVelocity, Player, PlayerPhysics, ReferenceToMob};
+use crate::{
+    keybinds::Keybinds,
+    mob::physics::MobVelocity,
+    util::{block_pos::BlockPos, chunk_pos::ChunkPos},
+};
 
-pub fn handle_player_flight(
+use super::{Player, PlayerPhysics};
+
+pub fn update_player_chunk_and_block_pos(
+    mut query: Query<(&mut ChunkPos, &mut BlockPos, &Transform), With<Player>>,
+) {
+    let (mut chunk_pos, mut block_pos, transform) = query.single_mut();
+
+    *block_pos = BlockPos::from(transform.translation);
+    *chunk_pos = ChunkPos::from(*block_pos);
+}
+
+pub fn creative_movement(
     player_query: Query<&Transform, With<Player>>,
-    mut player_physics_query: Query<&mut KinematicCharacterController, With<PlayerPhysics>>,
-    player_keybinds: Res<PlayerKeybinds>,
+    mut physics_query: Query<&mut KinematicCharacterController, With<PlayerPhysics>>,
+    keybinds: Res<Keybinds>,
     input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
 ) {
     let transform = player_query.single();
-    let mut controller = player_physics_query.single_mut();
+    let mut controller = physics_query.single_mut();
 
     let forward = transform.forward();
     let forward = Vec3::new(forward.x, 0.0, forward.z).normalize_or_zero();
@@ -19,23 +34,23 @@ pub fn handle_player_flight(
     let movement_speed = 12.5 * time.delta_seconds();
     let mut player_movement = Vec3::ZERO;
 
-    if input.pressed(player_keybinds.up) {
+    if input.pressed(keybinds.up) {
         player_movement += Vec3::Y;
     }
-    if input.pressed(player_keybinds.down) {
+    if input.pressed(keybinds.down) {
         player_movement -= Vec3::Y;
     }
 
-    if input.pressed(player_keybinds.left) {
+    if input.pressed(keybinds.left) {
         player_movement += Vec3::from(transform.left());
     }
-    if input.pressed(player_keybinds.right) {
+    if input.pressed(keybinds.right) {
         player_movement += Vec3::from(transform.right());
     }
-    if input.pressed(player_keybinds.forward) {
+    if input.pressed(keybinds.forward) {
         player_movement += forward;
     }
-    if input.pressed(player_keybinds.back) {
+    if input.pressed(keybinds.back) {
         player_movement -= forward;
     }
 
@@ -49,20 +64,17 @@ pub fn handle_player_flight(
     }
 }
 
-pub fn handle_player_movement(
+pub fn survival_movement(
     player_query: Query<&Transform, With<Player>>,
     mut physics_query: Query<
-        (
-            &mut MobVelocity,
-            Option<&KinematicCharacterControllerOutput>,
-        ),
+        (&mut MobVelocity, &KinematicCharacterControllerOutput),
         With<PlayerPhysics>,
     >,
     time: Res<Time>,
-    player_keybinds: Res<PlayerKeybinds>,
+    keybinds: Res<Keybinds>,
     input: Res<ButtonInput<KeyCode>>,
 ) {
-    let (mut velocity, Some(output)) = physics_query.single_mut() else {
+    let Ok((mut velocity, output)) = physics_query.get_single_mut() else {
         return;
     };
 
@@ -77,20 +89,20 @@ pub fn handle_player_movement(
     let mut player_movement = Vec3::ZERO;
     let mut player_jump = Vec3::ZERO;
 
-    if input.pressed(player_keybinds.up) && output.grounded {
+    if input.pressed(keybinds.up) && output.grounded {
         player_jump += Vec3::Y * jump_velocity;
     }
 
-    if input.pressed(player_keybinds.left) {
+    if input.pressed(keybinds.left) {
         player_movement += Vec3::from(transform.left());
     }
-    if input.pressed(player_keybinds.right) {
+    if input.pressed(keybinds.right) {
         player_movement += Vec3::from(transform.right());
     }
-    if input.pressed(player_keybinds.forward) {
+    if input.pressed(keybinds.forward) {
         player_movement += forward;
     }
-    if input.pressed(player_keybinds.back) {
+    if input.pressed(keybinds.back) {
         player_movement -= forward;
     }
 
@@ -114,7 +126,7 @@ pub fn handle_player_movement(
     }
 }
 
-pub fn handle_player_rotation(
+pub fn camera_rotation(
     mut player_query: Query<&mut Transform, With<Player>>,
     window_query: Query<&Window, With<PrimaryWindow>>,
     mut motion_event_reader: EventReader<MouseMotion>,
@@ -139,73 +151,28 @@ pub fn handle_player_rotation(
         Quat::from_axis_angle(Vec3::Y, yaw) * Quat::from_axis_angle(Vec3::X, pitch);
 }
 
-pub fn apply_mob_gravity(
-    mut physics_query: Query<(
-        &mut MobVelocity,
-        Option<&KinematicCharacterControllerOutput>,
-    )>,
-    time: Res<Time>,
-) {
-    let velocity_change = -0.1 * time.delta_seconds();
-
-    for (mut velocity, output) in physics_query.iter_mut() {
-        let Some(output) = output else {
-            info!("Kinematic character controller output doesn't exist, skipping gravity update");
-            continue;
-        };
-
-        if output.grounded {
-            velocity.y = 0.0;
-        } else {
-            velocity.y += velocity_change;
-        }
-    }
-}
-
-pub fn apply_mob_velocity(
-    mut physics_query: Query<(&MobVelocity, &mut KinematicCharacterController)>,
-) {
-    let terminal_velocity = 1.0;
-
-    for (MobVelocity(velocity), mut controller) in physics_query.iter_mut() {
-        let velocity = velocity.clamp_length_max(terminal_velocity);
-
-        controller.translation = if let Some(translation) = controller.translation {
-            Some(velocity + translation)
-        } else {
-            Some(velocity)
-        };
-    }
-}
-
-#[allow(clippy::type_complexity)]
-/// Copies the physics transform's translation onto the corresponding mob transform's translation.
-pub fn copy_mob_physics(
+pub fn copy_player_physics_transform_to_player_camera(
     mut set: ParamSet<(
-        // Mob transform query
-        Query<(&mut Transform, Has<Player>), With<Mob>>,
-        // Mob physics query
-        Query<(&Transform, &ReferenceToMob), With<KinematicCharacterController>>,
+        // Player entity
+        Query<&mut Transform, With<Player>>,
+        // Player physics entity
+        Query<&Transform, With<PlayerPhysics>>,
     )>,
 ) {
-    let mut to_copy = Vec::new();
+    let physics_translation = {
+        let physics_query = set.p1();
+        let single = physics_query.get_single();
 
-    for (transform, ReferenceToMob(entity)) in set.p1().iter() {
-        to_copy.push((transform.translation, *entity));
-    }
+        match single {
+            Ok(transform) => transform.translation,
 
-    let mut transform_query = set.p0();
-
-    for (translation, entity) in to_copy {
-        let Ok((mut transform, is_player)) = transform_query.get_mut(entity) else {
-            warn!("Physics to mob reference is invalid!");
-            return;
-        };
-
-        transform.translation = translation;
-
-        if is_player {
-            transform.translation += Vec3::new(0.0, 0.8, 0.0);
+            // If this is an error, this means the player doesn't currently have physics attached to it
+            Err(_) => return,
         }
-    }
+    };
+
+    let mut player_query = set.p0();
+    let mut player_transform = player_query.single_mut();
+
+    player_transform.translation = physics_translation + Vec3::new(0.0, 0.8, 0.0);
 }

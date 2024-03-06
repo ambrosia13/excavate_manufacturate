@@ -6,7 +6,6 @@ mod game_menu;
 mod keybinds;
 mod main_menu;
 mod mob;
-mod player;
 mod state;
 mod util;
 mod world;

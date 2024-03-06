@@ -1,18 +1,16 @@
 use bevy::prelude::*;
-use bevy_rapier3d::{
-    control::KinematicCharacterController, dynamics::RigidBody, geometry::Collider,
-};
+use bevy_rapier3d::prelude::*;
 
 use crate::{
+    keybinds::Keybinds,
     util::{self, block_pos::BlockPos, raytrace::Hit},
     world::{
-        block::{registry::BlockRegistry, static_block_data::BlockHardnessLevel, BlockData},
-        render::ChunkSpawnQueue,
+        block::{registry::BlockRegistry, static_block_data::BlockHardnessLevel},
         world_access::{BlockDestroyEvent, ExcavateManufacturateWorld},
     },
 };
 
-use super::{keybinds::PlayerKeybinds, Mob, MobVelocity, Player, ReferenceToMob};
+use super::Player;
 
 #[derive(Resource, Deref)]
 pub struct PlayerRaycast(pub Option<Hit>);
@@ -54,7 +52,7 @@ pub fn handle_destroy_block(
     block_registry: Res<BlockRegistry>,
 
     input: Res<ButtonInput<MouseButton>>,
-    keybinds: Res<PlayerKeybinds>,
+    keybinds: Res<Keybinds>,
 ) {
     if let PlayerRaycast(Some(hit)) = *player_raycast {
         if input.just_pressed(keybinds.break_block) {
@@ -72,47 +70,5 @@ pub fn handle_destroy_block(
                 block_destroy_events.send(BlockDestroyEvent::create(block_pos, &em_world));
             }
         }
-    }
-}
-
-pub fn spawn_ball(
-    mut commands: Commands,
-    player_transform: Query<&Transform, With<Player>>,
-    input: Res<ButtonInput<KeyCode>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
-    if input.just_pressed(KeyCode::KeyB) {
-        let transform = player_transform.single();
-        let position = transform.translation + Vec3::from(transform.forward()) * 10.0;
-
-        let transform = Transform::from_translation(position);
-
-        // Mob entity
-        let mob = commands
-            .spawn(MaterialMeshBundle {
-                mesh: meshes.add(Sphere::new(0.5).mesh()),
-                material: materials.add(StandardMaterial {
-                    base_color: Color::WHITE,
-                    ..Default::default()
-                }),
-                transform,
-                ..Default::default()
-            })
-            .insert(Mob)
-            .id();
-
-        // Physics entity
-        commands.spawn((
-            RigidBody::KinematicVelocityBased,
-            KinematicCharacterController::default(),
-            TransformBundle {
-                local: transform,
-                ..Default::default()
-            },
-            MobVelocity(Vec3::ZERO),
-            ReferenceToMob(mob),
-            Collider::ball(0.5),
-        ));
     }
 }

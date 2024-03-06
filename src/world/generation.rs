@@ -7,7 +7,7 @@ use bevy::{
 };
 
 use crate::{
-    player::Player,
+    mob::player::Player,
     util::{block_pos::BlockPos, chunk_pos::ChunkPos},
 };
 

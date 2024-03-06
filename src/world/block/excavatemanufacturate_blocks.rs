@@ -1,10 +1,10 @@
 pub mod block_ids {
     use crate::world::block::BlockId;
 
-    pub const GRASS: BlockId = 0;
-    pub const DIRT: BlockId = 1;
-    pub const BEDROCK: BlockId = 2;
-    pub const STONE: BlockId = 3;
+    pub const GRASS: BlockId = BlockId("excavatemanufacturate/grass");
+    pub const DIRT: BlockId = BlockId("excavatemanufacturate/dirt");
+    pub const BEDROCK: BlockId = BlockId("excavatemanufacturate/bedrock");
+    pub const STONE: BlockId = BlockId("excavatemanufacturate/stone");
 }
 
 pub mod block_types {

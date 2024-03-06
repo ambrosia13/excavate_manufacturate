@@ -2,7 +2,7 @@ use bevy::{prelude::*, utils::HashSet};
 use bevy_rapier3d::geometry::{Collider, ColliderDisabled};
 
 use crate::{
-    player::ReferenceToMob,
+    mob::physics::MobVelocity,
     util::{block_pos::BlockPos, chunk_pos::ChunkPos},
 };
 
@@ -17,7 +17,7 @@ pub struct ChunkColliderDisableEvent(pub ChunkPos);
 #[allow(clippy::type_complexity)]
 pub fn send_enable_chunk_colliders_near_mobs(
     mut events: EventWriter<ChunkColliderEnableEvent>,
-    mob_query: Query<&Transform, With<ReferenceToMob>>,
+    mob_query: Query<&Transform, With<MobVelocity>>,
     collider_query: Query<Entity, (With<ChunkPos>, With<Collider>, Without<ColliderDisabled>)>,
     spawned_chunks: Res<SpawnedChunks>,
 ) {
@@ -41,7 +41,7 @@ pub fn send_enable_chunk_colliders_near_mobs(
 
 pub fn send_disable_chunk_colliders_on_deserted_chunks(
     mut events: EventWriter<ChunkColliderDisableEvent>,
-    mob_query: Query<&Transform, With<ReferenceToMob>>,
+    mob_query: Query<&Transform, With<MobVelocity>>,
     query: Query<&ChunkPos, With<Collider>>,
 ) {
     let mut allowed_positions = HashSet::new();

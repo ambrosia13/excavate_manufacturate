@@ -2,32 +2,7 @@ use bevy::{prelude::*, utils::HashMap};
 
 use crate::util::{block_pos::BlockPos, chunk_pos::ChunkPos};
 
-use super::{
-    block::{BlockData, BlockType},
-    chunk::ChunkData,
-    render::ChunkSpawnQueue,
-};
-
-#[derive(Event)]
-pub struct BlockPlaceEvent {
-    pub pos: BlockPos,
-    pub data: BlockData,
-}
-
-#[derive(Event)]
-pub struct BlockDestroyEvent {
-    pub pos: BlockPos,
-    pub previous_block: BlockData,
-}
-
-impl BlockDestroyEvent {
-    pub fn create(block_pos: BlockPos, world: &ExcavateManufacturateWorld) -> Self {
-        Self {
-            pos: block_pos,
-            previous_block: world.get_block(block_pos).unwrap().clone(),
-        }
-    }
-}
+use super::{block::BlockData, chunk::ChunkData, render::ChunkSpawnQueue};
 
 #[derive(Resource)]
 pub struct ExcavateManufacturateWorld {
@@ -112,12 +87,33 @@ pub fn cleanup(mut commands: Commands) {
     info!("Cleaned up world data");
 }
 
+#[derive(Event)]
+pub struct BlockPlaceEvent {
+    pub pos: BlockPos,
+    pub block: BlockData,
+}
+
+#[derive(Event)]
+pub struct BlockDestroyEvent {
+    pub pos: BlockPos,
+    pub previous_block: BlockData,
+}
+
+impl BlockDestroyEvent {
+    pub fn create(block_pos: BlockPos, world: &ExcavateManufacturateWorld) -> Self {
+        Self {
+            pos: block_pos,
+            previous_block: world.get_block(block_pos).unwrap().clone(),
+        }
+    }
+}
+
 pub fn apply_block_place_events(
     mut events: ResMut<Events<BlockPlaceEvent>>,
     mut em_world: ResMut<ExcavateManufacturateWorld>,
 ) {
     for event in events.drain() {
-        em_world.set_block(event.pos, event.data);
+        em_world.set_block(event.pos, event.block);
     }
 }
 

@@ -9,7 +9,7 @@ use bevy_rapier3d::{
 use crossbeam_queue::SegQueue;
 
 use crate::{
-    player::Player,
+    mob::player::Player,
     util::{
         block_pos::BlockPos,
         chunk_pos::{ChunkPos, LocalChunkPos},

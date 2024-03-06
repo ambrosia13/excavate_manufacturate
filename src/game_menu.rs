@@ -5,7 +5,7 @@ use bevy::{
 use bevy_egui::{egui, EguiContexts};
 
 use crate::{
-    player::Player,
+    mob::player::Player,
     state::{GameModeState, MenuState},
     util::block_pos::BlockPos,
     world::{
