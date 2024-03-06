@@ -5,6 +5,9 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = ["bevy/dynamic_linking"]
+
 # Enable max optimizations for dependencies, but not for our code:
 [profile.dev.package."*"]
 opt-level = 3
@@ -14,7 +17,7 @@ opt-level = 3
 opt-level = 1
 
 [dependencies]
-bevy = { version = "0.13.0", features = ["dynamic_linking"] }
+bevy = "0.13.0"
 bevy_egui = "0.25.0"
 bevy_rapier3d = { version = "0.25.0", features = ["debug-render-3d"] }
 crossbeam-queue = "0.3.11"
