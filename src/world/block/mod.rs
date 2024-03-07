@@ -28,8 +28,10 @@ impl BlockData {
 pub struct BlockName(pub &'static str);
 
 /// Represents an identifier of static block data. To represent static data, individual blocks need to store this ID instead of the data itself.
+///
+/// Should never be created manually; this value is managed by the block registry.
 #[derive(Debug, Clone, Copy, Deref, DerefMut, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct BlockId(pub u16);
+pub struct BlockId(pub(in crate::world::block) u16);
 
 /// The data representation of a single block.
 #[derive(Debug, Clone)]
