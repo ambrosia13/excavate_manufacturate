@@ -10,7 +10,7 @@ use super::{
 pub struct BlockRegistryResource(Arc<BlockRegistry>);
 
 pub struct BlockRegistry {
-    pub block_id_map: HashMap<BlockName, BlockId>,
+    pub block_ids: HashMap<BlockName, BlockId>,
     pub static_block_data: HashMap<BlockId, StaticBlockData>,
     pub atlas_size: (usize, usize),
 }
@@ -19,7 +19,7 @@ impl BlockRegistry {
     fn create(atlas_size: (usize, usize)) -> Self {
         use excavatemanufacturate_blocks::*;
 
-        let mut block_id_map = HashMap::new();
+        let mut block_ids = HashMap::new();
         let mut static_block_data = HashMap::new();
 
         let block_names = [
@@ -30,28 +30,28 @@ impl BlockRegistry {
         ];
 
         for (next_block_id, name) in block_names.into_iter().enumerate() {
-            block_id_map.insert(name, BlockId(next_block_id as u16));
+            block_ids.insert(name, BlockId(next_block_id as u16));
         }
 
         static_block_data.insert(
-            *block_id_map.get(&block_names::GRASS).unwrap(),
+            *block_ids.get(&block_names::GRASS).unwrap(),
             excavatemanufacturate_blocks::block_data::GRASS,
         );
         static_block_data.insert(
-            *block_id_map.get(&block_names::DIRT).unwrap(),
+            *block_ids.get(&block_names::DIRT).unwrap(),
             excavatemanufacturate_blocks::block_data::DIRT,
         );
         static_block_data.insert(
-            *block_id_map.get(&block_names::BEDROCK).unwrap(),
+            *block_ids.get(&block_names::BEDROCK).unwrap(),
             excavatemanufacturate_blocks::block_data::BEDROCK,
         );
         static_block_data.insert(
-            *block_id_map.get(&block_names::STONE).unwrap(),
+            *block_ids.get(&block_names::STONE).unwrap(),
             excavatemanufacturate_blocks::block_data::STONE,
         );
 
         Self {
-            block_id_map,
+            block_ids,
             static_block_data,
             atlas_size,
         }
@@ -62,7 +62,7 @@ impl BlockRegistry {
     }
 
     pub fn get_block_id(&self, name: &BlockName) -> Option<BlockId> {
-        self.block_id_map.get(name).cloned()
+        self.block_ids.get(name).cloned()
     }
 
     pub fn get_block_data(&self, id: BlockId) -> &StaticBlockData {
@@ -76,11 +76,53 @@ impl BlockRegistry {
 #[derive(Resource, Deref, DerefMut)]
 pub struct TextureAtlasHandle(Handle<Image>);
 
+#[derive(Resource, Deref, DerefMut)]
+pub struct Mods(Vec<ModInfo>);
+
+pub struct ModInfo {
+    pub namespace: &'static str,
+    pub blocks: Vec<&'static str>,
+}
+
 pub fn setup(mut commands: Commands, mut assets: ResMut<Assets<Image>>) {
     let mut assets_directory = bevy::asset::io::file::FileAssetReader::get_base_path();
     assets_directory.push("assets");
     assets_directory.push("excavatemanufacturate");
     assets_directory.push("textures");
+
+    // let mut block_textures = Vec::new();
+
+    // for mod_info in mods.iter() {
+    //     let mut directory = assets_directory.join(mod_info.namespace);
+    //     directory.push("textures");
+    //     directory.push("block");
+
+    //     for &block in mod_info.blocks.iter() {
+    //         let texture_file = directory.join(format!("{}.png", block));
+
+    //         let Ok(image) = image::open(texture_file) else {
+    //             panic!(
+    //                 "Failed to read image when parsing textures for mod {}: {}",
+    //                 mod_info.namespace, block
+    //             );
+    //         };
+
+    //         block_textures.push(image);
+    //     }
+    // }
+
+    // let namespaces = ["excavatemanufacturate"];
+
+    // let excavatemanufacturate = ModInfo {
+    //     namespace: "excavatemanufacturate",
+    //     blocks: vec!["grass, dirt, bedrock, stone"],
+    // };
+
+    // for namespace in namespaces {
+    //     let mut directory = assets_directory.join(namespace);
+    //     directory.push("textures");
+    //     directory.push("block");
+    // }
 
     let atlas_dynamic_image =
         image::open(assets_directory.join("atlas.png")).expect("Couldn't load texture atlas image");
