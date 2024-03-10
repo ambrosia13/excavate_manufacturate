@@ -58,7 +58,10 @@ impl BlockRegistry {
     }
 
     pub fn create_block(&self, name: &BlockName) -> Option<Block> {
-        Block::from_name(name, self)
+        self.get_block_id(name).map(|id| Block {
+            id,
+            dynamic_data: None,
+        })
     }
 
     pub fn get_block_id(&self, name: &BlockName) -> Option<BlockId> {

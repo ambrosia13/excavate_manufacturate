@@ -1,9 +1,12 @@
 use std::hash::Hash;
 
-use bevy::prelude::*;
+use bevy::{ecs::system::EntityCommands, prelude::*};
+
+use crate::util::block_pos::BlockPos;
 
 use self::registry::BlockRegistry;
 
+pub mod dynamic_block_data;
 pub mod excavatemanufacturate_blocks;
 pub mod registry;
 pub mod static_block_data;
@@ -29,11 +32,11 @@ pub struct BlockName(pub &'static str);
 
 /// Represents an identifier of static block data. To represent static data, individual blocks need to store this ID instead of the data itself.
 ///
-/// Should never be created manually; this value is managed by the block registry.
-#[derive(Debug, Clone, Copy, Deref, DerefMut, PartialEq, Eq, PartialOrd, Ord, Hash)]
+/// Should never be constructed manually; this value is managed by the block registry.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct BlockId(pub(in crate::world::block) u16);
 
-/// The data representation of a single block.
+/// A lightweight data representation of a single block. Construction of this type is usually handled by the [`BlockRegistry`].
 #[derive(Debug, Clone)]
 pub struct Block {
     /// A static ID that serves as a pointer to static block data applicable to all blocks of this type.
@@ -44,10 +47,9 @@ pub struct Block {
 }
 
 impl Block {
-    pub fn from_name(name: &BlockName, registry: &BlockRegistry) -> Option<Self> {
-        registry.get_block_id(name).map(|id| Self {
-            id,
-            dynamic_data: None,
-        })
+    /// Attaches dynamic data to this block using the entity ID of the dynamic data.
+    pub fn with_dynamic_data(mut self, entity: Entity) -> Self {
+        self.dynamic_data = Some(entity);
+        self
     }
 }
