@@ -10,7 +10,7 @@ pub struct Hit {
 pub fn raytrace_dda<F>(
     ray_pos: Vec3,
     ray_dir: Vec3,
-    raytrace_length: i32,
+    steps: usize,
     mut hit_evaluator: F,
 ) -> Option<Hit>
 where
@@ -28,7 +28,7 @@ where
     let mut voxel_pos = ray_pos.floor();
     let mut current_pos = ray_pos;
 
-    for _ in 0..raytrace_length {
+    for _ in 0..steps {
         let closest_dist = next_dist.min_element();
 
         current_pos += ray_dir * closest_dist;
