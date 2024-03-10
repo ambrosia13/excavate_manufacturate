@@ -1,7 +1,5 @@
 use crate::util::mesh::BlockFace;
 
-pub mod coord;
-
 #[derive(Clone, Copy)]
 pub struct AtlasCoordinates {
     pub min: (u16, u16),
