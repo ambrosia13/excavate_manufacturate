@@ -118,11 +118,21 @@ pub fn apply_block_place_events(
 }
 
 pub fn apply_block_destroy_events(
+    mut commands: Commands,
     mut events: ResMut<Events<BlockDestroyEvent>>,
     mut em_world: ResMut<ExcavateManufacturateWorld>,
     chunk_spawn_queue: Res<ChunkSpawnQueue>,
 ) {
     for event in events.drain() {
+        if let Some(entity) = event
+            .previous_block
+            .as_ref()
+            .and_then(|block| block.dynamic_data)
+        {
+            // There was dynamic data attached to this block, despawn it.
+            commands.entity(entity).despawn();
+        }
+
         if em_world.set_block(event.pos, BlockData::none()) {
             // Redraw chunks if needed
             chunk_spawn_queue.submit_on_block_update(event.pos);
