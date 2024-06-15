@@ -1,5 +1,6 @@
 use bevy::{
     prelude::*,
+    render::render_resource::AsBindGroup,
     utils::{HashMap, HashSet},
 };
 use bevy_rapier3d::{
@@ -107,7 +108,7 @@ pub fn populate_chunk_spawn_queue(
 pub fn spawn_chunks<const COUNT: usize>(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut materials: ResMut<Assets<ChunkMaterial>>,
     mut spawned_chunks: ResMut<SpawnedChunks>,
     mut chunk_meshes: ResMut<ChunkMeshes>,
     em_world: Res<ExcavateManufacturateWorld>,
@@ -149,10 +150,8 @@ pub fn spawn_chunks<const COUNT: usize>(
             .spawn((
                 MaterialMeshBundle {
                     mesh: mesh_handle,
-                    material: materials.add(StandardMaterial {
-                        base_color: Color::WHITE,
-                        base_color_texture: Some(texture_atlas_handle.clone_weak()),
-                        ..Default::default()
+                    material: materials.add(ChunkMaterial {
+                        atlas_texture: Some(texture_atlas_handle.clone_weak()),
                     }),
                     transform: Transform::from_translation(
                         BlockPos::from(chunk_pos).as_vec3() - 1.0,
@@ -202,5 +201,43 @@ pub fn despawn_all_chunks(
         if let Some(entity) = spawned_chunks.remove(&chunk_pos) {
             commands.entity(entity).despawn();
         }
+    }
+}
+
+#[derive(Asset, TypePath, AsBindGroup, Debug, Clone)]
+pub struct ChunkMaterial {
+    #[texture(0)]
+    #[sampler(1)]
+    atlas_texture: Option<Handle<Image>>,
+}
+
+impl ChunkMaterial {
+    const SHADER_PATH: &'static str = "excavatemanufacturate/shaders/gbuffer.wgsl";
+}
+
+impl Material for ChunkMaterial {
+    fn vertex_shader() -> bevy::render::render_resource::ShaderRef {
+        Self::SHADER_PATH.into()
+    }
+
+    fn fragment_shader() -> bevy::render::render_resource::ShaderRef {
+        Self::SHADER_PATH.into()
+    }
+
+    fn specialize(
+        _pipeline: &bevy::pbr::MaterialPipeline<Self>,
+        descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
+        layout: &bevy::render::mesh::MeshVertexBufferLayout,
+        _key: bevy::pbr::MaterialPipelineKey<Self>,
+    ) -> Result<(), bevy::render::render_resource::SpecializedMeshPipelineError> {
+        let vertex_layout = layout.get_layout(&[
+            Mesh::ATTRIBUTE_POSITION.at_shader_location(0),
+            Mesh::ATTRIBUTE_NORMAL.at_shader_location(1),
+            Mesh::ATTRIBUTE_UV_0.at_shader_location(2),
+        ])?;
+
+        descriptor.vertex.buffers = vec![vertex_layout];
+
+        Ok(())
     }
 }

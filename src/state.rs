@@ -20,3 +20,10 @@ pub enum GameModeState {
     #[default]
     Creative,
 }
+
+pub fn set_state_to<T: States + Copy>(state: T) -> impl FnMut(ResMut<NextState<T>>) {
+    move |mut next_state: ResMut<NextState<T>>| {
+        info!("Setting the state to {:?}", state);
+        next_state.set(state);
+    }
+}

@@ -4,27 +4,32 @@ use bevy::{
 };
 use bevy_rapier3d::prelude::*;
 
-use crate::{mob, state, world};
+use crate::{
+    mob, state,
+    world::{self, render::ChunkMaterial},
+};
 
 pub struct ExcavateManufacturateGamePlugin;
 
 impl Plugin for ExcavateManufacturateGamePlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(RapierPhysicsPlugin::<NoUserData>::default())
+            .add_plugins(MaterialPlugin::<ChunkMaterial>::default())
             .add_plugins((
                 mob::ExcavateManufacturateMobPlugin,
                 mob::player::ExcavateManufacturatePlayerPlugin,
                 world::ExcavateManufacturateWorldPlugin,
             ))
-            .add_systems(OnEnter(state::MenuState::MainMenu), enable_cursor)
             .add_systems(
-                OnEnter(state::PlayState::Playing),
-                disable_cursor.run_if(in_state(state::MenuState::InGame)),
+                OnEnter(state::MenuState::MainMenu),
+                (enable_cursor, state::set_state_to(state::PlayState::Paused)),
             )
             .add_systems(
-                OnEnter(state::PlayState::Paused),
-                enable_cursor.run_if(in_state(state::MenuState::InGame)),
+                OnEnter(state::MenuState::InGame),
+                state::set_state_to(state::PlayState::Playing),
             )
+            .add_systems(OnEnter(state::PlayState::Playing), disable_cursor)
+            .add_systems(OnEnter(state::PlayState::Paused), enable_cursor)
             .add_systems(
                 Update,
                 (

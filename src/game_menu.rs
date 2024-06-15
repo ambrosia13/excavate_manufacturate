@@ -72,7 +72,7 @@ fn performance_metrics_system(
     egui::Window::new("Performance Metrics").show(contexts.ctx_mut(), |ui| {
         if let Some(fps) = diagnostics
             .get(&FrameTimeDiagnosticsPlugin::FPS)
-            .and_then(|fps| fps.value())
+            .and_then(|fps| fps.smoothed())
         {
             ui.label(format!("Fps: {:.3}", fps));
         }
