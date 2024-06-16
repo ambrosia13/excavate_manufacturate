@@ -1,6 +1,6 @@
 use bevy::{
     prelude::*,
-    render::render_resource::AsBindGroup,
+    render::{mesh::MeshVertexAttribute, render_resource::AsBindGroup},
     utils::{HashMap, HashSet},
 };
 use bevy_rapier3d::{
@@ -213,6 +213,12 @@ pub struct ChunkMaterial {
 
 impl ChunkMaterial {
     const SHADER_PATH: &'static str = "excavatemanufacturate/shaders/gbuffer.wgsl";
+
+    const ATTRIBUTE_AO: MeshVertexAttribute = MeshVertexAttribute::new(
+        "ambient_occlusion",
+        139205343,
+        bevy::render::render_resource::VertexFormat::Float32,
+    );
 }
 
 impl Material for ChunkMaterial {

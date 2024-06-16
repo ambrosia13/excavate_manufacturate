@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{num::NonZeroU16, sync::Arc};
 
 use bevy::{prelude::*, render::render_asset::RenderAssetUsages, utils::HashMap};
 
@@ -30,7 +30,10 @@ impl BlockRegistry {
         ];
 
         for (next_block_id, name) in block_names.into_iter().enumerate() {
-            block_ids.insert(name, BlockId(next_block_id as u16));
+            block_ids.insert(
+                name,
+                BlockId(NonZeroU16::new(next_block_id as u16 + 1).unwrap()),
+            );
         }
 
         static_block_data.insert(

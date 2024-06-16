@@ -15,6 +15,7 @@ pub struct ChunkMeshBuilder {
     pub vertices: Vec<[f32; 3]>,
     pub normals: Vec<[f32; 3]>,
     pub uvs: Vec<[f32; 2]>,
+    pub ao: Vec<f32>,
     pub indices: Vec<u32>,
 }
 
@@ -24,6 +25,7 @@ impl ChunkMeshBuilder {
             vertices: Vec::new(),
             normals: Vec::new(),
             uvs: Vec::new(),
+            ao: Vec::new(),
             indices: Vec::new(),
         }
     }

@@ -1,4 +1,4 @@
-use std::hash::Hash;
+use std::{hash::Hash, num::NonZeroU16};
 
 use bevy::{ecs::system::EntityCommands, prelude::*};
 
@@ -34,7 +34,7 @@ pub struct BlockName(pub &'static str);
 ///
 /// Should never be constructed manually; this value is managed by the block registry.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct BlockId(pub(in crate::world::block) u16);
+pub struct BlockId(pub(in crate::world::block) NonZeroU16);
 
 /// A lightweight data representation of a single block. Construction of this type is usually handled by the [`BlockRegistry`].
 #[derive(Debug, Clone)]
